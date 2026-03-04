@@ -1,0 +1,36 @@
+{
+  "configurations": [
+    {
+      "command": "npm run dev -- --inspect",
+      "name": "Next.js: debug server-side",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "name": "Next.js: debug client-side",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:3000"
+    },
+    {
+      "name": "Next.js: debug full stack",
+      "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
+      "request": "launch",
+      "runtimeArgs": [
+        "--inspect"
+      ],
+      "serverReadyAction": {
+        "action": "debugWithEdge",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}"
+      },
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node"
+    }
+  ],
+  "version": "0.2.0"
+}

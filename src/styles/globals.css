@@ -1,0 +1,156 @@
+@import url("tailwindcss");
+@import url("tw-animate-css");
+
+@plugin "tailwind-scrollbar" {
+  preferredstrategy: "pseudoelements";
+}
+
+@source "../node_modules/streamdown/dist/*.js";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(98.5% 0.01 230deg);
+  --foreground: oklch(32% 0.03 240deg);
+  --card: oklch(99% 0.008 230deg);
+  --card-foreground: oklch(28% 0.02 240deg);
+  --popover: oklch(100% 0 0deg);
+  --popover-foreground: oklch(30% 0.02 240deg);
+
+  /* 🌤 Pediatric Palette */
+  --primary: oklch(72% 0.12 230deg);
+  --primary-foreground: oklch(99% 0.01 230deg);
+  --secondary: oklch(92% 0.03 230deg);
+  --secondary-foreground: oklch(35% 0.03 240deg);
+  --muted: oklch(94% 0.02 230deg);
+  --muted-foreground: oklch(55% 0.03 240deg);
+  --accent: oklch(88% 0.06 210deg);
+  --accent-foreground: oklch(30% 0.02 240deg);
+  --destructive: oklch(64% 0.2 25deg);
+  --destructive-foreground: oklch(100% 0 0deg);
+  --border: oklch(90% 0.01 230deg);
+  --input: oklch(96% 0.015 230deg);
+  --ring: oklch(75% 0.12 230deg);
+
+  /* Medical Chart Pastels */
+  --chart-1: oklch(72% 0.12 230deg);
+  --chart-2: oklch(75% 0.1 160deg);
+  --chart-3: oklch(80% 0.08 290deg);
+  --chart-4: oklch(82% 0.1 60deg);
+  --chart-5: oklch(70% 0.12 200deg);
+  --sidebar: oklch(97% 0.01 230deg);
+  --sidebar-foreground: oklch(35% 0.02 240deg);
+  --sidebar-primary: oklch(72% 0.12 230deg);
+  --sidebar-primary-foreground: oklch(100% 0 0deg);
+  --sidebar-accent: oklch(92.45% 0.0138 92.9892deg);
+  --sidebar-accent-foreground: oklch(32.5% 0 0deg);
+  --sidebar-border: oklch(94.01% 0 0deg);
+  --sidebar-ring: oklch(77.31% 0 0deg);
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: oklch(25% 0.03 240deg);
+  --foreground: oklch(92% 0.01 230deg);
+  --card: oklch(30% 0.03 240deg);
+  --card-foreground: oklch(95% 0.01 230deg);
+  --primary: oklch(78% 0.14 230deg);
+  --primary-foreground: oklch(20% 0.02 240deg);
+  --secondary: oklch(35% 0.04 240deg);
+  --secondary-foreground: oklch(90% 0.01 230deg);
+  --muted: oklch(32% 0.03 240deg);
+  --muted-foreground: oklch(75% 0.02 230deg);
+  --accent: oklch(40% 0.06 210deg);
+  --accent-foreground: oklch(95% 0.01 230deg);
+  --destructive: oklch(63.68% 0.2078 25.3313deg);
+  --destructive-foreground: oklch(100% 0 0deg);
+  --border: oklch(40% 0.02 240deg);
+  --input: oklch(38% 0.02 240deg);
+  --ring: oklch(80% 0.12 230deg);
+  --sidebar: oklch(22% 0.03 240deg);
+  --sidebar-primary: oklch(75% 0.12 230deg);
+  --sidebar-primary-foreground: oklch(100% 0 0deg);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Animation Overrides */
+  --animate-first: move-vertical 30s ease infinite;
+  --animate-second: move-in-circle 20s reverse infinite;
+  --animate-third: move-in-circle 40s linear infinite;
+  --animate-fourth: move-horizontal 40s ease infinite;
+  --animate-fifth: move-in-circle 20s ease infinite;
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  @keyframes move-horizontal {
+    0%,
+    100% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+    50% {
+      transform: translateX(50%) translateY(10%);
+    }
+  }
+
+  @keyframes move-in-circle {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes move-vertical {
+    0%,
+    100% {
+      transform: translateY(-50%);
+    }
+    50% {
+      transform: translateY(50%);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply font-sans bg-background text-foreground;
+  }
+
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+}
+
+@utility custom-scrollbar {
+  @apply scrollbar-thin scrollbar-track-background scrollbar-thumb-muted-foreground scrollbar-hover:scrollbar-thumb-muted-foreground/60 scrollbar-active:scrollbar-thumb-muted-foreground/30;
+}

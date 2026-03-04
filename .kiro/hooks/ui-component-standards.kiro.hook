@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "UI Component Standards",
+  "description": "Enforces established UI patterns: Radix UI primitives, tailwind-merge for classes, react-hook-form for inputs, date-fns for time manipulation, and decimal.js for medical dosages/financial values. Prevents use of 'any' types and alternative libraries like Base UI or Day.js.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/components/**/*.tsx",
+      "src/components/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the edited component file and ensure it follows these standards:\n1. Use Radix UI primitives for UI components (not Base UI)\n2. Use tailwind-merge (cn utility) for className merging\n3. Use react-hook-form for form inputs\n4. Use date-fns for all time/date manipulation (not Day.js or moment)\n5. Use decimal.js for medical dosages and financial values\n6. Avoid 'any' types - use proper TypeScript types\nIf any violations are found, suggest corrections to align with these patterns."
+  }
+}

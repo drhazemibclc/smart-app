@@ -1,0 +1,100 @@
+{
+  "$schema": "../node_modules/prisma-zod-generator/lib/config/schema.json",
+  "addIncludeType": false,
+  "addSelectType": false,
+  "dateTimeStrategy": "date",
+  "globalExclusions": {
+    "input": [
+      "id",
+      "createdAt",
+      "updatedAt"
+    ],
+    "pure": [
+      "password",
+      "hashedPassword"
+    ],
+    "result": []
+  },
+  "formatGeneratedSchemas": true,
+  "pureModels": false,
+  "jsonSchemaCompatible": true,
+  "naming": {
+    "input": {
+      "exportNamePattern": ""
+    },
+    "preset": "zod-prisma-types",
+    "pureModel": {
+      "exportNamePattern": ""
+    },
+    "schema": {
+      "exportNamePattern": "",
+      "filePattern": ""
+    },
+    "enum": {
+      "exportNamePattern": "",
+      "filePattern": ""
+    }
+  },
+  "strictCreateInputs": true,
+  "inferCreateArgsFromSchemas": false,
+  "jsonSchemaOptions": {
+    "dateTimeFormat": "isoDate"
+  },
+  "mode": "minimal",
+  "models": {
+    "ZodV4Examples": {
+      "enabled": true,
+      "operations": [
+        "create",
+        "update",
+        "findUnique",
+        "findMany",
+        "delete",
+        "upsert"
+      ],
+      "strictMode": {
+        "enabled": true,
+        "exclude": [
+          "update"
+        ],
+        "operations": [
+          "findMany",
+          "create"
+        ]
+      }
+    }
+  },
+  "pureModelsExcludeCircularRelations": true,
+  "pureModelsIncludeRelations": true,
+  "pureModelsLean": true,
+  "singleFileName": "schemas.ts",
+  "strictMode": {
+    "enabled": true,
+    "objects": false,
+    "operations": false,
+    "variants": false
+  },
+  "useMultipleFiles": false,
+  "validateWhereUniqueAtLeastOne": true,
+ "variants": {
+    "input": {
+      "enabled": true,
+      "partial": true,
+      "strictMode": false,
+      "suffix": "Input" 
+    },
+    "pure": {
+      "enabled": true,
+      "partial": false,
+      "strictMode": false,
+      "suffix": "Schema"
+    },
+    "result": {
+      "enabled": false,
+      "suffix": "Result"
+    }
+  },
+  "zodImportTarget": "v4",
+  "dateTimeSplitStrategy": true,
+  "preserveRequiredScalarsOnCreate": true
+}

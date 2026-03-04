@@ -1,0 +1,43 @@
+{
+  "extends": [
+    "stylelint-config-standard"
+  ],
+  "rules": {
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "theme",
+          "utility",
+          "source",
+          "plugin",
+          "apply",
+          "layer",
+          "custom-variant",
+          "import",
+          "tailwindcss",
+          "keyframes"
+        ]
+      }
+    ],
+    "declaration-empty-line-before": null,
+    "function-no-unknown": [
+      true,
+      {
+        "ignoreFunctions": [
+          "oklch",
+          "calc"
+        ]
+      }
+    ],
+    "no-descending-specificity": null,
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": [
+          "preferredstrategy"
+        ]
+      }
+    ]
+  }
+}
