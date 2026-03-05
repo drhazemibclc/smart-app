@@ -153,7 +153,7 @@ export const medicalRouter = createTRPCRouter({
   getDiagnosesByDoctor: protectedProcedure
     .input(
       z.object({
-        doctorId: z.string().uuid(),
+        doctorId: z.uuid(),
         limit: z.number().min(1).max(100).optional()
       })
     )
@@ -361,7 +361,7 @@ export const medicalRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getLatestVitalSignsByPatient: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid() }))
+    .input(z.object({ patientId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -876,7 +876,7 @@ export const medicalRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getActivePrescriptionsByPatient: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid() }))
+    .input(z.object({ patientId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -904,7 +904,7 @@ export const medicalRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getPatientMedicalSummary: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid() }))
+    .input(z.object({ patientId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;

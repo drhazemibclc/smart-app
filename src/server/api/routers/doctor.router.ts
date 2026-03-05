@@ -37,7 +37,7 @@ export const doctorRouter = createTRPCRouter({
     .input(
       z
         .object({
-          clinicId: z.string().uuid().optional(),
+          clinicId: z.uuid().optional(),
           limit: z.number().optional()
         })
         .optional()

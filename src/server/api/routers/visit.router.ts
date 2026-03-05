@@ -37,8 +37,8 @@ export const visitRouter = createTRPCRouter({
         offset: z.number().min(0).default(0),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
-        patientId: z.string().uuid().optional(),
-        doctorId: z.string().uuid().optional(),
+        patientId: z.uuid().optional(),
+        doctorId: z.uuid().optional(),
         status: z.array(z.enum(['PENDING', 'SCHEDULED', 'CHECKED_IN', 'COMPLETED', 'CANCELLED', 'NO_SHOW'])).optional()
       })
     )
@@ -99,7 +99,7 @@ export const visitRouter = createTRPCRouter({
     .input(
       z.object({
         limit: z.number().min(1).max(50).default(20),
-        doctorId: z.string().uuid().optional(),
+        doctorId: z.uuid().optional(),
         days: z.number().min(1).max(30).default(7)
       })
     )
@@ -224,7 +224,7 @@ export const visitRouter = createTRPCRouter({
   getDoctorSchedule: protectedProcedure
     .input(
       z.object({
-        doctorId: z.string().uuid(),
+        doctorId: z.uuid(),
         date: z.date().default(() => new Date())
       })
     )
@@ -287,7 +287,7 @@ export const visitRouter = createTRPCRouter({
   updateStatus: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         status: AppointmentStatus,
         reason: z.string().optional()
       })
@@ -332,7 +332,7 @@ export const visitRouter = createTRPCRouter({
    * Cancel visit
    */
   cancel: protectedProcedure
-    .input(z.object({ id: z.string().uuid(), reason: z.string().optional() }))
+    .input(z.object({ id: z.uuid(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const clinicId = ctx.session.user?.clinic?.id ?? '';
 
@@ -343,7 +343,7 @@ export const visitRouter = createTRPCRouter({
    * Complete visit
    */
   complete: protectedProcedure
-    .input(z.object({ id: z.string().uuid(), notes: z.string().optional() }))
+    .input(z.object({ id: z.uuid(), notes: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const clinicId = ctx.session.user?.clinic?.id ?? '';
 
@@ -353,7 +353,7 @@ export const visitRouter = createTRPCRouter({
   /**
    * Check in patient
    */
-  checkIn: protectedProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ ctx, input }) => {
+  checkIn: protectedProcedure.input(z.object({ id: z.uuid() })).mutation(async ({ ctx, input }) => {
     const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     return appointmentService.checkInPatient(input.id, ctx.session.user.id, clinicId);
@@ -365,13 +365,13 @@ export const visitRouter = createTRPCRouter({
   reschedule: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         appointmentDate: z.date(),
         time: z
           .string()
           .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
           .optional(),
-        doctorId: z.string().uuid().optional(),
+        doctorId: z.uuid().optional(),
         reason: z.string().optional()
       })
     )

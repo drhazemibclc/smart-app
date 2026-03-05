@@ -17,7 +17,7 @@ import { adminProcedure, createTRPCRouter, protectedProcedure } from '..';
 
 // Extended schema for diagnosis with appointment
 const AddDiagnosisInputSchema = DiagnosisCreateSchema.extend({
-  appointmentId: z.string().uuid()
+  appointmentId: z.uuid()
 });
 
 export const paymentsRouter = createTRPCRouter({

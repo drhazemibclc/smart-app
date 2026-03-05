@@ -1,18 +1,6 @@
 // app/page.tsx
 
-import {
-  ArrowRight,
-  Award,
-  Calendar,
-  Clock,
-  Heart,
-  Mail,
-  MapPin,
-  Phone,
-  Shield,
-  Star,
-  Users
-} from 'lucide-react';
+import { ArrowRight, Award, Calendar, Clock, Heart, Mail, MapPin, Phone, Shield, Star, Users } from 'lucide-react';
 import { cacheLife } from 'next/cache';
 import Image from 'next/image';
 import Link from 'next/link';

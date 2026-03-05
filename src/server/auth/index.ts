@@ -5,6 +5,8 @@ import { nextCookies } from 'better-auth/next-js';
 import { admin, customSession } from 'better-auth/plugins';
 import 'dotenv/config';
 
+import { dash } from '@better-auth/infra';
+
 import { env } from '../../env/server';
 import { generateId } from '../../lib/id';
 import prisma from '../db/client';
@@ -115,7 +117,8 @@ export const auth = betterAuth({
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      redirectURI: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/google`
     }
   },
   rateLimit: {
@@ -205,13 +208,14 @@ export const auth = betterAuth({
           role: dbUser?.role ?? 'PATIENT',
           clinic: primaryClinic
             ? {
-                id: primaryClinic.userId,
-                name: primaryClinic.user.name
-              }
+              id: primaryClinic.userId,
+              name: primaryClinic.user.name
+            }
             : undefined
         }
       };
     }),
+    dash(),
     nextCookies()
   ]
 });
@@ -219,3 +223,12 @@ export const auth = betterAuth({
 export type Session = typeof auth.$Infer.Session;
 export type User = Session['user'] & { role: string };
 export type Role = keyof typeof roles;
+export async function getSessionSafe(headers: Headers) {
+  try {
+    const session = await auth.api.getSession({ headers });
+    return { session, error: null };
+  } catch (error) {
+    console.error('Session fetch error:', error);
+    return { session: null, error };
+  }
+}

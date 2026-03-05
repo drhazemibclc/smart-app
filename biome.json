@@ -95,9 +95,7 @@
       "semicolons": "always",
       "trailingCommas": "none"
     },
-    "globals": [
-      "React"
-    ]
+    "globals": ["React"]
   },
   "linter": {
     "domains": {
@@ -202,11 +200,7 @@
           "fix": "safe",
           "level": "warn",
           "options": {
-            "functions": [
-              "clsx",
-              "cva",
-              "cn"
-            ]
+            "functions": ["clsx", "cva", "cn"]
           }
         }
       },
@@ -256,10 +250,7 @@
         "noConsole": {
           "level": "off",
           "options": {
-            "allow": [
-              "warn",
-              "error"
-            ]
+            "allow": ["warn", "error"]
           }
         },
         "noControlCharactersInRegex": "error",
@@ -302,12 +293,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/*.ts",
-        "**/*.tsx",
-        "*.mts",
-        "*.cts"
-      ],
+      "includes": ["**/*.ts", "**/*.tsx", "*.mts", "*.cts"],
       "linter": {
         "rules": {
           "complexity": {
@@ -343,9 +329,7 @@
       }
     },
     {
-      "includes": [
-        "components/ui/**"
-      ],
+      "includes": ["components/ui/**"],
       "linter": {
         "rules": {
           "correctness": {

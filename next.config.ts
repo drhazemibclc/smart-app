@@ -99,8 +99,10 @@ const nextConfig: NextConfig = {
       expire: 31536000 // 365 days
     }
   },
+
   // Experimental features
   experimental: {
+
     // View Transitions API
     viewTransition: true,
     optimizePackageImports: [
@@ -118,6 +120,7 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   org: 'health-factory',
   project: 'clinic-nextjs',
+  
   silent: !process.env.CI,
   widenClientFileUpload: true,
   tunnelRoute: '/monitoring'

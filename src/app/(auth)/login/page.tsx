@@ -25,7 +25,6 @@ export default function LoginPage() {
           <div className='absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#93C5FD_10px,#93C5FD_20px)] opacity-5' />
         </div>
 
-
         {/* Clinic Showcase */}
         <div className='relative z-10 my-auto flex max-w-125 flex-col gap-8'>
           <div className='fade-in slide-in-from-bottom-4 animate-in space-y-4 delay-100 duration-700'>

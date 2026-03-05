@@ -111,7 +111,7 @@ export const patientRouter = createTRPCRouter({
     .input(
       z
         .object({
-          clinicId: z.string().uuid().optional(),
+          clinicId: z.uuid().optional(),
           limit: z.number().optional()
         })
         .optional()
@@ -162,27 +162,25 @@ export const patientRouter = createTRPCRouter({
    * Get recent patients
    * Service handles caching internally
    */
-  getRecentPatients: protectedProcedure
-    .input(z.object({ clinicId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        // Security check
-        if (input.clinicId !== ctx.session?.user?.clinic?.id) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Access denied'
-          });
-        }
-
-        return await patientService.getRecentPatients(input.clinicId);
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+  getRecentPatients: protectedProcedure.input(z.object({ clinicId: z.uuid() })).query(async ({ ctx, input }) => {
+    try {
+      // Security check
+      if (input.clinicId !== ctx.session?.user?.clinic?.id) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch recent patients'
+          code: 'FORBIDDEN',
+          message: 'Access denied'
         });
       }
-    }),
+
+      return await patientService.getRecentPatients(input.clinicId);
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch recent patients'
+      });
+    }
+  }),
 
   /**
    * Get paginated patients with filters
@@ -238,7 +236,7 @@ export const patientRouter = createTRPCRouter({
   getAvailableDoctors: protectedProcedure
     .input(
       z.object({
-        clinicId: z.string().uuid(),
+        clinicId: z.uuid(),
         day: z.date()
       })
     )
@@ -307,7 +305,7 @@ export const patientRouter = createTRPCRouter({
   update: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         data: UpdatePatientSchema
       })
     )

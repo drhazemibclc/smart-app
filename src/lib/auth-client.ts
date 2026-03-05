@@ -1,48 +1,55 @@
 'use client';
 
+// 1. Remove 'console' import as it's built-in; remove unused 'error' import
+import { sentinelClient } from '@better-auth/infra/client';
 import { passkeyClient } from '@better-auth/passkey/client';
-import { adminClient, customSessionClient, inferAdditionalFields, magicLinkClient } from 'better-auth/client/plugins';
-import type { AccessControl } from 'better-auth/plugins';
+import {
+  adminClient,
+  customSessionClient,
+  inferAdditionalFields,
+  magicLinkClient
+} from 'better-auth/client/plugins';
+import type { AccessControl } from 'better-auth/plugins/access'; // Specific path is safer
 import { createAuthClient } from 'better-auth/react';
 
+// Shared server types/logic
 import type { auth } from '@/server/auth';
 import { ac, roles, type UserRoles } from '@/server/auth/roles';
 
-// Build the plugin separately with type assertion
+// Ensure your plugin definition doesn't include server-side logic
 const adminPlugin = adminClient({
   ac: ac as unknown as AccessControl,
   roles
 });
 
+// 2. Fix the nested export and syntax
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
 
   fetchOptions: {
-    onError: ctx => {
+    onError: (ctx) => {
       console.error('❌ Auth error:', ctx.error);
-
-      // Check if it's a 401 error
       if (ctx.error?.status === 401 && typeof window !== 'undefined') {
         window.location.href = '/login';
       }
     },
-    onSuccess: ctx => {
+    onSuccess: (ctx) => {
       console.log('✅ Auth request succeeded:', ctx.response?.url ?? 'unknown URL');
     }
   },
-
   plugins: [
+    sentinelClient(),
     magicLinkClient(),
     passkeyClient(),
-    inferAdditionalFields<typeof auth>(),
+    inferAdditionalFields<typeof auth>(), // Correctly infer server schema
     customSessionClient<typeof auth>(),
     adminPlugin
   ]
 });
 
-// Extract hooks and functions
-export const { useSession } = authClient;
+// 3. Extract hooks and functions correctly
 export const {
+  useSession,
   signIn,
   signOut,
   signUp,
@@ -59,7 +66,9 @@ export const {
   revokeSessions
 } = authClient;
 
-// Custom auth hook
+/**
+ * Custom auth hook for convenient access to session state
+ */
 export function useAuth() {
   const { data: session, isPending, error } = useSession();
 
@@ -67,20 +76,22 @@ export function useAuth() {
 
   return {
     error,
-    isAuthenticated: status === 'authenticated',
+    isAuthenticated: !!session,
     isLoading: isPending,
     session: session ?? null,
     status,
-    role: session?.user?.role,
+    role: session?.user?.role as UserRoles | undefined,
     user: session?.user ?? null
   };
 }
 
-// Permission checker utility - use authClient.admin directly
+/**
+ * Client-side permission checker
+ */
 export const hasPermission = (permissions: Record<string, string[]>, role: UserRoles) => {
   return authClient.admin.checkRolePermission({
     permissions,
-    role: role
+    role
   });
 };
 

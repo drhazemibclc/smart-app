@@ -3,8 +3,8 @@
 import { Bell, Menu, Search, User } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { LogoHeader } from '@/components/branding/logo-header';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+
 import { Sidebar } from './sidebar';
 
 interface AppHeaderProps {
@@ -79,11 +80,11 @@ export function AppHeader({
 
         {/* Search */}
         {showSearch && (
-          <div className='hidden md:flex flex-1 max-w-md'>
+          <div className='hidden max-w-md flex-1 md:flex'>
             <div className='relative w-full'>
-              <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+              <Search className='absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground' />
               <Input
-                className='pl-8 bg-background'
+                className='bg-background pl-8'
                 placeholder='Search patients, appointments...'
                 type='search'
               />
@@ -91,7 +92,7 @@ export function AppHeader({
           </div>
         )}
 
-        <div className='flex items-center gap-2 ml-auto'>
+        <div className='ml-auto flex items-center gap-2'>
           {/* Notifications */}
           {showNotifications && (
             <Button

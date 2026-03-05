@@ -81,7 +81,7 @@ export type DashboardStatsInput = z.infer<typeof DashboardStatsInputSchema>;
 export type MedicalRecordsSummaryInput = z.infer<typeof MedicalRecordsSummaryInputSchema>;
 export const PaymentFilterSchema = z.object({
   // Required for multi-tenancy security
-  clinicId: z.string().uuid('Invalid Clinic ID format'),
+  clinicId: z.uuid('Invalid Clinic ID format'),
 
   // Pagination
   skip: z.number().int().min(0).default(0),

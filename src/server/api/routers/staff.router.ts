@@ -137,7 +137,7 @@ export const staffRouter = createTRPCRouter({
    * Delete staff member
    * Delegates to staff service with clinic scope
    */
-  deleteStaff: adminProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ input, ctx }) => {
+  deleteStaff: adminProcedure.input(z.object({ id: z.uuid() })).mutation(async ({ input, ctx }) => {
     try {
       const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
@@ -176,7 +176,7 @@ export const staffRouter = createTRPCRouter({
    * Get staff by ID
    * Public procedure with clinic scope validation
    */
-  getStaffById: publicProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input, ctx }) => {
+  getStaffById: publicProcedure.input(z.object({ id: z.uuid() })).query(async ({ input, ctx }) => {
     try {
       const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {

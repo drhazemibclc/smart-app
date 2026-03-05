@@ -24,6 +24,23 @@ export const CACHE_PROFILES = {
     revalidate: 600, // 10 minutes
     expire: 1800 // 30 minutes
   },
+  stats: {
+    realtime: {
+      stale: 10, // 10 seconds
+      revalidate: 30, // 30 seconds
+      expire: 300 // 5 minutes
+    },
+    hourly: {
+      stale: 3600, // 1 hour
+      revalidate: 7200, // 2 hours
+      expire: 86400 // 24 hours
+    },
+    daily: {
+      stale: 86400, // 24 hours
+      revalidate: 172800, // 48 hours
+      expire: 604800 // 7 days
+    }
+  },
 
   // ==================== MEDICAL MEDIUM-TERM ====================
   medicalMedium: {

@@ -22,10 +22,10 @@ import { trpc } from '@/utils/trpc';
 
 // Validation schema
 const appointmentSchema = z.object({
-  patientId: z.string().uuid('Please select a patient'),
-  clinicId: z.string().uuid('Clinic ID is required'),
-  doctorId: z.string().uuid('Please select a doctor'),
-  serviceId: z.string().uuid('Please select a service').optional(),
+  patientId: z.uuid('Please select a patient'),
+  clinicId: z.uuid('Clinic ID is required'),
+  doctorId: z.uuid('Please select a doctor'),
+  serviceId: z.uuid('Please select a service').optional(),
   appointmentDate: z.date({
     error: 'Please select a date'
   }),

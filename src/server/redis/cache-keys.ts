@@ -4,6 +4,17 @@
  */
 
 export const CACHE_KEYS = {
+  TOP_MEDICATIONS: (clinicId: string, limit: number) => `prescriptions:top-meds:${clinicId}:${limit}`,
+  TOP_MEDICATIONS_RANGE: (clinicId: string, from: string, to: string) =>
+    `prescriptions:top-meds:range:${clinicId}:${from}:${to}`,
+  PRESCRIPTION_DASHBOARD: (clinicId: string) => `prescriptions:dashboard:${clinicId}`,
+  EXPIRING_PRESCRIPTIONS: (clinicId: string) => `prescriptions:expiring:${clinicId}`,
+  PRESCRIPTION_TRENDS: (clinicId: string) => `clinic:${clinicId}:prescription-trends`,
+  PRESCRIPTION_STATS_RANGE: (clinicId: string, from: string, to: string) =>
+    `clinic:${clinicId}:prescription-stats:range:${from}:${to}`,
+  PRESCRIPTION_STATS: (clinicId: string) => `clinic:${clinicId}:prescription-stats`,
+  PRESCRIPTION: (id: string) => `prescription:${id}`,
+  PRESCRIPTIONS_BY_MEDICAL_RECORD: (medicalRecordId: string) => `prescriptions:record:${medicalRecordId}`,
   LAB_TESTS_BY_SERVICE: (serviceId: string) => `service:${serviceId}:lab-tests`,
   LAB_TESTS_BY_PATIENT: (patientId: string) => `patient:${patientId}:lab-tests`,
   CLINIC_MEDICAL_RECORDS: (clinicId: string) => `clinic:${clinicId}:medical-records`,
@@ -153,6 +164,11 @@ export const CACHE_KEYS = {
 } as const;
 
 export const CACHE_TTL = {
+  TOP_MEDICATIONS: 60 * 60, // 1 hour
+  PRESCRIPTION_TRENDS: 60 * 60, // 1 hour
+  PRESCRIPTION_STATS: 60 * 60, // 1 hour
+  PRESCRIPTION_STATS_RANGE: 60 * 60, // 1 hour
+  PRESCRIPTION: 60 * 60, // 1 hour
   CLINIC_MEDICAL_RECORDS: 60 * 60, // 1 hour
   PATIENT_MEDICAL_RECORDS: 60 * 60, // 1 hour
   PATIENT_VACCINATION_SUMMARY: 60 * 60, // 1 hour

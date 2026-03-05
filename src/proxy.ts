@@ -1,149 +1,320 @@
-// src/proxy.ts - Enhanced version with improvements
+// src/proxy.ts - Production-Ready with Fixed Issues
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { auth, type Session } from '@/server/auth';
 
 // Type-safe role checking
-type UserRole = 'ADMIN' | 'DOCTOR' | 'STAFF' | 'PATIENT';
+type UserRole = 'ADMIN' | 'DOCTOR' | 'NURSE' | 'STAFF' | 'PATIENT';
 
 // Public routes that don't require authentication
-const publicRoutes = [
-  '/', // Home page
-  '/login', // Login page
-  '/register', // Registration
-  '/register-provider', // Provider registration
-  '/choose-role', // Role selection
-  '/about', // Public info pages
+const publicRoutes = new Set([
+  '/',
+  '/login',
+  '/register',
+  '/register-provider',
+  '/choose-role',
+  '/about',
   '/contact',
   '/services',
   '/privacy',
   '/terms',
-  '/api/auth', // Auth API routes
-  '/api/health', // Health check
-  '/api/trpc', // tRPC endpoints (auth handled internally)
-  '/_next', // Next.js internals
+  '/api/auth',
+  '/api/health',
+  '/api/trpc',
+  '/_next',
   '/favicon.ico',
-  '/manifest.webmanifest', // PWA manifest
-  '/manifest.ts', // Manifest route
-  '/icons', // Static icons
-  '/sentry-example-page', // Sentry test page
-  '/test-page' // Test page
-] as const;
+  '/manifest.webmanifest',
+  '/manifest.ts',
+  '/icons',
+  '/sentry-example-page',
+  '/test-page'
+]);
 
-// Static asset patterns
+// Static asset patterns - more comprehensive
 const staticAssetPatterns = [
-  /\.(png|ico|json|webp|svg|css|js|jpg|jpeg|gif|woff2?|ttf|eot)$/i,
+  /\.(png|ico|json|webp|svg|css|js|jpg|jpeg|gif|woff2?|ttf|eot|pdf|txt)$/i,
   /^\/icons\/.*/i,
-  /^\/images\/.*/i
+  /^\/images\/.*/i,
+  /^\/_next\/static\/.*/i,
+  /^\/_next\/image\/.*/i
 ];
 
-// Role-based access rules
-const routePermissions: Record<string, UserRole[]> = {
-  '/dashboard/billing': ['ADMIN', 'STAFF'],
-  '/dashboard/growth-charts': ['ADMIN', 'DOCTOR', 'STAFF', 'PATIENT'],
-  '/dashboard/medical-records': ['ADMIN', 'DOCTOR', 'STAFF'],
-  '/dashboard/prescriptions': ['ADMIN', 'DOCTOR'],
-  '/dashboard/patients': ['ADMIN', 'DOCTOR', 'STAFF'],
-  '/dashboard/appointments': ['ADMIN', 'DOCTOR', 'STAFF', 'PATIENT'],
-  '/dashboard/vaccines': ['ADMIN', 'DOCTOR', 'STAFF'],
-  '/dashboard/travel-clearances': ['ADMIN', 'DOCTOR', 'STAFF'],
-  '/dashboard/settings': ['ADMIN', 'STAFF']
-};
+// Role-based access rules - comprehensive and sorted by specificity
+const routePermissions: Array<{ pattern: RegExp; allowedRoles: UserRole[] }> = [
+  // Admin only routes
+  { pattern: /^\/dashboard\/admin(\/.*)?$/, allowedRoles: ['ADMIN'] },
+  { pattern: /^\/api\/admin(\/.*)?$/, allowedRoles: ['ADMIN'] },
+
+  // Billing routes
+  { pattern: /^\/dashboard\/billing(\/.*)?$/, allowedRoles: ['ADMIN', 'STAFF'] },
+  { pattern: /^\/api\/billing(\/.*)?$/, allowedRoles: ['ADMIN', 'STAFF'] },
+
+  // Medical records
+  { pattern: /^\/dashboard\/medical-records(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'STAFF'] },
+  { pattern: /^\/api\/medical-records(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE'] },
+
+  // Prescriptions
+  { pattern: /^\/dashboard\/prescriptions(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR'] },
+  { pattern: /^\/api\/prescriptions(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR'] },
+
+  // Patients
+  { pattern: /^\/dashboard\/patients(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'STAFF'] },
+  { pattern: /^\/api\/patients(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE'] },
+
+  // Appointments
+  { pattern: /^\/dashboard\/appointments(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'STAFF', 'PATIENT'] },
+  { pattern: /^\/api\/appointments(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE'] },
+
+  // Vaccines
+  { pattern: /^\/dashboard\/vaccines(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'STAFF'] },
+  { pattern: /^\/api\/vaccines(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE'] },
+
+  // Growth charts
+  { pattern: /^\/dashboard\/growth-charts(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'STAFF', 'PATIENT'] },
+
+  // Travel clearances
+  { pattern: /^\/dashboard\/travel-clearances(\/.*)?$/, allowedRoles: ['ADMIN', 'DOCTOR', 'NURSE'] },
+
+  // Settings
+  { pattern: /^\/dashboard\/settings(\/.*)?$/, allowedRoles: ['ADMIN', 'STAFF'] },
+
+  // Analytics
+  { pattern: /^\/api\/analytics(\/.*)?$/, allowedRoles: ['ADMIN', 'STAFF'] },
+
+  // Upload
+  { pattern: /^\/api\/upload(\/.*)?$/, allowedRoles: ['ADMIN', 'STAFF', 'DOCTOR', 'NURSE'] }
+];
+
+// Cache for session to avoid repeated calls in same request
+const sessionCache = new WeakMap<Request, Session | null>();
 
 export async function proxy(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl;
 
-    // 1. Check static assets first (fastest)
-    if (staticAssetPatterns.some(pattern => pattern.test(pathname))) {
+    // 1. Quick bypass for static assets (fastest path)
+    if (isStaticAsset(pathname)) {
       return NextResponse.next();
     }
 
-    // 2. Check exact public routes
-    if (publicRoutes.includes(pathname as (typeof publicRoutes)[number])) {
+    // 2. Check public routes
+    if (isPublicRoute(pathname)) {
       return NextResponse.next();
     }
 
-    // 3. Check public route prefixes
-    if (publicRoutes.some(route => route !== '/' && pathname.startsWith(route) && route.length > 1)) {
-      return NextResponse.next();
-    }
+    // 3. Get session with caching
+    const session = await getCachedSession(request);
 
-    // 4. Get session using request headers
-    const session = await auth.api.getSession({
-      headers: request.headers
-    });
-
-    // 5. Redirect to login if no session
+    // 4. Redirect to login if no session
     if (!session?.user) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
+      return redirectToLogin(request);
     }
 
-    const role = (session.user.role as string).toUpperCase() as UserRole;
+    // 5. Normalize role
+    const role = normalizeRole(session.user.role);
 
     // 6. Admin bypass - can access everything
     if (role === 'ADMIN') {
       return addUserHeaders(NextResponse.next(), session);
     }
 
-    // 7. Check dashboard route permissions
-    for (const [route, allowedRoles] of Object.entries(routePermissions)) {
-      if (pathname.startsWith(route) && !allowedRoles.includes(role)) {
-        // Log unauthorized access attempt (for monitoring)
-        console.warn(`Unauthorized access attempt: ${role} tried to access ${pathname}`);
-
-        // Redirect to dashboard home with error
-        const dashboardUrl = new URL('/dashboard', request.url);
-        dashboardUrl.searchParams.set('error', 'unauthorized');
-        return NextResponse.redirect(dashboardUrl);
-      }
+    // 7. Check route permissions
+    const permissionCheck = checkRoutePermission(pathname, role);
+    if (!permissionCheck.allowed) {
+      return handleUnauthorized(request, role, pathname, permissionCheck.reason);
     }
 
-    // 8. API routes access control
+    // 8. API routes CORS handling
     if (pathname.startsWith('/api') && !pathname.startsWith('/api/trpc')) {
-      // Admin API routes
-      if (pathname.startsWith('/api/admin') && role !== 'DOCTOR') {
-        return NextResponse.json({ error: 'Unauthorized', message: 'Admin access required' }, { status: 403 });
-      }
-
-      // Analytics API
-      if (pathname.startsWith('/api/analytics') && !['ADMIN', 'STAFF'].includes(role)) {
-        return NextResponse.json({ error: 'Unauthorized', message: 'Insufficient permissions' }, { status: 403 });
-      }
-
-      // Upload API - staff and above
-      if (pathname.startsWith('/api/upload') && !['ADMIN', 'STAFF', 'DOCTOR'].includes(role)) {
-        return NextResponse.json({ error: 'Unauthorized', message: 'Upload permission denied' }, { status: 403 });
-      }
+      return handleApiRequest(request, session, role);
     }
 
     // 9. Add user headers and continue
     return addUserHeaders(NextResponse.next(), session);
   } catch (error) {
-    // Log error but don't expose internals
-    console.error('Proxy error:', error);
-
-    // Fail open to login on error
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('error', 'proxy_error');
-    return NextResponse.redirect(loginUrl);
+    return handleProxyError(request, error);
   }
 }
 
-// Helper to add user headers to response
-function addUserHeaders(response: NextResponse, session: Session) {
+// ==================== Helper Functions ====================
+
+function isStaticAsset(pathname: string): boolean {
+  return staticAssetPatterns.some(pattern => pattern.test(pathname));
+}
+
+function isPublicRoute(pathname: string): boolean {
+  // Exact match
+  if (publicRoutes.has(pathname)) {
+    return true;
+  }
+
+  // Prefix match for routes like /api/auth/*
+  for (const route of publicRoutes) {
+    if (route !== '/' && pathname.startsWith(route + '/')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function getCachedSession(request: NextRequest): Promise<Session | null> {
+  // Check cache first
+  if (sessionCache.has(request)) {
+    return sessionCache.get(request) || null;
+  }
+
+  try {
+    const session = await auth.api.getSession({
+      headers: request.headers
+    });
+
+    // Cache for this request
+    if (session) {
+      sessionCache.set(request, session);
+    }
+
+    return session;
+  } catch (error) {
+    console.error('Session fetch error:', error);
+    return null;
+  }
+}
+
+function normalizeRole(role: string | undefined): UserRole {
+  if (!role) return 'PATIENT';
+
+  const upperRole = role.toUpperCase();
+
+  // Map any variations to valid roles
+  if (upperRole.includes('ADMIN')) return 'ADMIN';
+  if (upperRole.includes('DOCTOR')) return 'DOCTOR';
+  if (upperRole.includes('NURSE')) return 'NURSE';
+  if (upperRole.includes('STAFF')) return 'STAFF';
+
+  return 'PATIENT';
+}
+
+function checkRoutePermission(pathname: string, role: UserRole): { allowed: boolean; reason?: string } {
+  // Find the most specific matching pattern
+  const matchingRule = routePermissions.find(rule => rule.pattern.test(pathname));
+
+  if (!matchingRule) {
+    // No specific rule found - allow access to non-dashboard routes
+    if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/api')) {
+      return { allowed: true };
+    }
+
+    // Dashboard routes without specific rules default to staff+
+    if (pathname.startsWith('/dashboard') && !['ADMIN', 'DOCTOR', 'NURSE', 'STAFF'].includes(role)) {
+      return { allowed: false, reason: 'Dashboard access requires staff privileges' };
+    }
+
+    return { allowed: true };
+  }
+
+  // Check if role is allowed
+  if (!matchingRule.allowedRoles.includes(role)) {
+    return {
+      allowed: false,
+      reason: `This area requires ${matchingRule.allowedRoles.join(' or ')} privileges`
+    };
+  }
+
+  return { allowed: true };
+}
+
+function redirectToLogin(request: NextRequest): NextResponse {
+  const loginUrl = new URL('/login', request.url);
+  loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+  return NextResponse.redirect(loginUrl);
+}
+
+function handleUnauthorized(request: NextRequest, role: UserRole, pathname: string, reason?: string): NextResponse {
+  // Log for monitoring
+  console.warn(
+    `🚫 Unauthorized access: role=${role}, path=${pathname}, reason=${reason || 'insufficient permissions'}`
+  );
+
+  // API routes return JSON
+  if (pathname.startsWith('/api')) {
+    return NextResponse.json(
+      {
+        error: 'Forbidden',
+        message: reason || 'You do not have permission to access this resource',
+        code: 'FORBIDDEN'
+      },
+      { status: 403 }
+    );
+  }
+
+  // Page routes redirect to dashboard with error
+  const dashboardUrl = new URL('/dashboard', request.url);
+  dashboardUrl.searchParams.set('error', 'unauthorized');
+  if (reason) {
+    dashboardUrl.searchParams.set('reason', reason);
+  }
+
+  return NextResponse.redirect(dashboardUrl);
+}
+
+function handleApiRequest(request: NextRequest, session: Session, role: UserRole): NextResponse {
+  // Handle preflight
+  if (request.method === 'OPTIONS') {
+    const response = new NextResponse(null, { status: 204 });
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-User-Role');
+    response.headers.set('Access-Control-Max-Age', '86400');
+    return response;
+  }
+
+  const response = NextResponse.next();
+
+  // Add CORS headers
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Add user headers
+  addUserHeaders(response, session);
+
+  return response;
+}
+
+function addUserHeaders(response: NextResponse, session: Session): NextResponse {
   response.headers.set('x-user-id', session.user.id);
-  response.headers.set('x-user-role', session.user.role ?? 'DOCTOR');
+  response.headers.set('x-user-role', session.user.role ?? 'PATIENT');
   response.headers.set('x-user-email', session.user.email ?? '');
 
-  // Add user name if available
   if (session.user.name) {
     response.headers.set('x-user-name', session.user.name);
   }
 
   return response;
+}
+
+function handleProxyError(request: NextRequest, error: unknown): NextResponse {
+  // Log error (but don't expose internals)
+  console.error('❌ Proxy error:', error);
+
+  const isApi = request.nextUrl.pathname.startsWith('/api');
+
+  if (isApi) {
+    return NextResponse.json(
+      {
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred',
+        code: 'PROXY_ERROR'
+      },
+      { status: 500 }
+    );
+  }
+
+  // For page routes, redirect to login with error
+  const loginUrl = new URL('/login', request.url);
+  loginUrl.searchParams.set('error', 'proxy_error');
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

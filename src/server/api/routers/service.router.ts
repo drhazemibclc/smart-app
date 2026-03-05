@@ -39,7 +39,7 @@ export const serviceRouter = createTRPCRouter({
     .input(
       z
         .object({
-          clinicId: z.string().uuid().optional()
+          clinicId: z.uuid().optional()
         })
         .optional()
     )
@@ -109,7 +109,7 @@ export const serviceRouter = createTRPCRouter({
   getByClinic: protectedProcedure
     .input(
       z.object({
-        clinicId: z.string().uuid().optional(),
+        clinicId: z.uuid().optional(),
         filters: ServiceFilterSchema.partial().optional()
       })
     )
@@ -151,7 +151,7 @@ export const serviceRouter = createTRPCRouter({
   getByCategory: protectedProcedure
     .input(
       z.object({
-        clinicId: z.string().uuid().optional(),
+        clinicId: z.uuid().optional(),
         category: z.string()
       })
     )
@@ -227,7 +227,7 @@ export const serviceRouter = createTRPCRouter({
   getStats: protectedProcedure
     .input(
       z.object({
-        clinicId: z.string().uuid().optional(),
+        clinicId: z.uuid().optional(),
         fromDate: z.coerce.date().optional(),
         toDate: z.coerce.date().optional()
       })
@@ -262,8 +262,8 @@ export const serviceRouter = createTRPCRouter({
   checkAvailability: protectedProcedure
     .input(
       z.object({
-        serviceId: z.string().uuid(),
-        clinicId: z.string().uuid().optional()
+        serviceId: z.uuid(),
+        clinicId: z.uuid().optional()
       })
     )
     .query(async ({ ctx, input }) => {
@@ -509,7 +509,7 @@ export const serviceRouter = createTRPCRouter({
   bulkUpdateStatus: protectedProcedure
     .input(
       z.object({
-        ids: z.array(z.string().uuid()),
+        ids: z.array(z.uuid()),
         status: z.enum(['ACTIVE', 'INACTIVE'])
       })
     )

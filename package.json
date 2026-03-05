@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@better-auth/dash": "0.1.6",
+    "@better-auth/infra": "0.1.8",
     "@better-auth/passkey": "1.5.3",
     "@better-auth/prisma-adapter": "1.5.3",
     "@dnd-kit/core": "6.3.1",
@@ -86,6 +87,7 @@
     "@tanstack/react-query-devtools": "5.91.3",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
     "@types/heic-convert": "2.1.0",
     "@types/node": "25.3.3",
     "@types/nodemailer": "7.0.11",
@@ -134,6 +136,7 @@
     "db:push": "prisma db push",
     "db:reset": "prisma migrate reset --force",
     "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
     "db:upgrade": "prisma db upgrade",
     "dev": "next dev",
     "format": "ultracite fix",

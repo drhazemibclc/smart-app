@@ -117,7 +117,7 @@ export const growthRouter = createTRPCRouter({
    * Get latest growth record for patient
    */
   getLatestGrowthRecord: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid(), clinicId: z.string().uuid() }))
+    .input(z.object({ patientId: z.uuid(), clinicId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -151,8 +151,8 @@ export const growthRouter = createTRPCRouter({
   getPatientMeasurements: protectedProcedure
     .input(
       z.object({
-        patientId: z.string().uuid(),
-        clinicId: z.string().uuid(),
+        patientId: z.uuid(),
+        clinicId: z.uuid(),
         limit: z.number().min(1).max(100).default(50)
       })
     )
@@ -187,7 +187,7 @@ export const growthRouter = createTRPCRouter({
    * Get growth summary for patient
    */
   getGrowthSummary: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid(), clinicId: z.string().uuid() }))
+    .input(z.object({ patientId: z.uuid(), clinicId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -218,40 +218,38 @@ export const growthRouter = createTRPCRouter({
   /**
    * Get clinic growth overview
    */
-  getClinicGrowthOverview: protectedProcedure
-    .input(z.object({ clinicId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const clinicId = ctx.session?.user?.clinic?.id;
-        if (!clinicId) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Clinic ID not found'
-          });
-        }
-
-        if (input.clinicId !== clinicId) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Access denied'
-          });
-        }
-
-        return await growthService.getClinicGrowthOverview(clinicId);
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+  getClinicGrowthOverview: protectedProcedure.input(z.object({ clinicId: z.uuid() })).query(async ({ ctx, input }) => {
+    try {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!clinicId) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch clinic growth overview'
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found'
         });
       }
-    }),
+
+      if (input.clinicId !== clinicId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied'
+        });
+      }
+
+      return await growthService.getClinicGrowthOverview(clinicId);
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch clinic growth overview'
+      });
+    }
+  }),
 
   /**
    * Get recent growth records
    */
   recent: protectedProcedure
-    .input(z.object({ clinicId: z.string().uuid(), limit: z.number().min(1).max(20).default(5) }))
+    .input(z.object({ clinicId: z.uuid(), limit: z.number().min(1).max(20).default(5) }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;

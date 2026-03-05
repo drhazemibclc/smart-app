@@ -173,6 +173,7 @@ export const PrescribedItemUpdateSchema = PrescribedItemBaseSchema.partial().ext
 
 // ==================== PRESCRIPTION SCHEMAS ====================
 export const PrescriptionBaseSchema = z.object({
+  id: idSchema.optional(),
   medicalRecordId: idSchema,
   doctorId: doctorIdSchema,
   patientId: patientIdSchema,
@@ -313,3 +314,100 @@ export type DrugInteractionInput = z.infer<typeof DrugInteractionSchema>;
 export type DrugInteractionCheckInput = z.infer<typeof DrugInteractionCheckSchema>;
 export type MedicationAllergyInput = z.infer<typeof MedicationAllergySchema>;
 export type PharmacyDispenseInput = z.infer<typeof PharmacyDispenseSchema>;
+// src/modules/prescription/prescription.schema.ts
+
+// ==================== ENUMS ====================
+export const DosageUnitEnum = z.enum(['MG', 'ML', 'TABLET', 'MCG', 'G', 'IU', 'DROP', 'SPRAY', 'PUFF', 'UNIT']);
+export const DrugRouteEnum = z.enum([
+  'IV',
+  'PO',
+  'IM',
+  'SC',
+  'TOPICAL',
+  'INHALED',
+  'RECTAL',
+  'SUBLINGUAL',
+  'BUCCAL',
+  'TRANSDERMAL'
+]);
+export const PrescriptionStatusEnum = z.enum(['active', 'completed', 'cancelled']);
+
+// ==================== PRESCRIBED ITEM SCHEMA ====================
+export const PrescribedItemSchema = z.object({
+  id: z.uuid().optional(),
+  drugId: z.uuid(),
+  dosageValue: z.number().positive(),
+  dosageUnit: DosageUnitEnum,
+  frequency: z.string().min(1),
+  duration: z.string().min(1),
+  instructions: z.string().optional(),
+  drugRoute: DrugRouteEnum.optional()
+});
+
+export type PrescribedItemInput = z.infer<typeof PrescribedItemSchema>;
+
+// ==================== PRESCRIPTION SCHEMAS ====================
+export const GetPrescriptionByIdSchema = z.object({
+  id: z.uuid()
+});
+
+export const GetPrescriptionsByMedicalRecordSchema = z.object({
+  medicalRecordId: z.uuid(),
+  limit: z.number().min(1).max(100).optional(),
+  offset: z.number().min(0).optional()
+});
+
+export const GetActivePrescriptionsByPatientSchema = z.object({
+  patientId: z.uuid()
+});
+
+export const CreatePrescriptionSchema = z.object({
+  patientId: z.string().min(1, 'Patient is required'),
+  doctorId: z.string().min(1, 'Doctor is required'),
+  medicalRecordId: z.string(),
+  encounterId: z.string(),
+  medicationName: z.string().optional(),
+  instructions: z.string().optional(),
+  issuedDate: z.date(),
+  status: z.enum(['active', 'completed', 'cancelled']),
+  endDate: z.date().optional(),
+  prescribedItems: z
+    .array(
+      z.object({
+        drugId: z.string().min(1, 'Drug is required'),
+        dosageValue: z.number().positive('Dosage must be positive'),
+        dosageUnit: z.enum(['MG', 'ML', 'TABLET', 'MCG', 'G', 'IU', 'DROP']),
+        frequency: z.string().min(1, 'Frequency is required'),
+        duration: z.string(),
+        drugRoute: z.enum(['PO', 'IV', 'IM', 'SC', 'TOPICAL', 'INHALED']).optional(),
+        instructions: z.string().optional(),
+        drug: {
+          id: z.uuid(),
+          name: z.string()
+        }
+      })
+    )
+    .min(1, 'At least one medication is required')
+});
+
+export const UpdatePrescriptionSchema = z
+  .object({
+    id: z.uuid(),
+    medicationName: z.string().optional(),
+    instructions: z.string().optional(),
+    endDate: z.date().optional(),
+    status: PrescriptionStatusEnum.optional()
+  })
+  .partial();
+
+export const DeletePrescriptionSchema = z.object({
+  id: z.uuid()
+});
+
+// ==================== TYPES ====================
+export type GetPrescriptionByIdInput = z.infer<typeof GetPrescriptionByIdSchema>;
+export type GetPrescriptionsByMedicalRecordInput = z.infer<typeof GetPrescriptionsByMedicalRecordSchema>;
+export type GetActivePrescriptionsByPatientInput = z.infer<typeof GetActivePrescriptionsByPatientSchema>;
+export type CreatePrescriptionInput = z.infer<typeof CreatePrescriptionSchema>;
+export type UpdatePrescriptionInput = z.infer<typeof UpdatePrescriptionSchema>;
+export type DeletePrescriptionInput = z.infer<typeof DeletePrescriptionSchema>;

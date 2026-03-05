@@ -11,6 +11,7 @@ import { medicalRouter } from './medical.router';
 import { notificationsRouter } from './notification';
 import { paymentsRouter } from './Payment.router';
 import { patientRouter } from './patient.router';
+import { prescriptionRouter } from './prescription.router';
 import { searchRouter } from './search';
 import { serviceRouter } from './service.router';
 import { staffRouter } from './staff.router';
@@ -45,6 +46,7 @@ export const appRouter = router({
   search: searchRouter,
   service: serviceRouter,
   staff: staffRouter,
+  prescription: prescriptionRouter,
   user: userRouter,
   vac: vaccinationRouter,
   visit: visitRouter

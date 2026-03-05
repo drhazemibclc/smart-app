@@ -12,7 +12,7 @@ async function seedAdmin() {
 
   log.info('🌱 Starting admin user, clinic, and doctor profile seed...');
 
-  const adminEmail = 'hazem0302012@gmail.com';
+  const adminEmail = 'admin@prisma.com';
   const adminPassword = 'HealthF26';
   const adminName = 'Dr. Hazem Ali';
   const adminPhone = '01003497579';
@@ -79,11 +79,16 @@ async function seedAdmin() {
 
     try {
       // Try Better Auth first
-      const signUpResult = await auth.api.signUpEmail({
+      const signUpResult = await auth.api.createUser({
         body: {
           email: adminEmail,
           password: adminPassword,
-          name: adminName
+          name: adminName,
+          role: 'admin',
+          data:{
+            role: 'ADMIN',
+            clinicId: clinic.id
+          }
         }
       });
 

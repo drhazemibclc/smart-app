@@ -79,11 +79,11 @@ export const VitalSignsBaseSchema = z
 // ==================== DIAGNOSIS SCHEMAS ====================
 export const DiagnosisBaseSchema = z.object({
   // Foreign Keys
-  patientId: z.string().uuid('Invalid Patient ID'),
-  doctorId: z.string().uuid('Invalid Doctor ID'),
-  medicalId: z.string().uuid('Medical Record ID is required'), // Required & Unique in Model
-  clinicId: z.string().uuid().optional().nullable(),
-  appointmentId: z.string().uuid().optional().nullable(),
+  patientId: z.uuid('Invalid Patient ID'),
+  doctorId: z.uuid('Invalid Doctor ID'),
+  medicalId: z.uuid('Medical Record ID is required'), // Required & Unique in Model
+  clinicId: z.uuid().optional().nullable(),
+  appointmentId: z.uuid().optional().nullable(),
 
   // Core Fields
   date: z.date().default(() => new Date()),

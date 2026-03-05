@@ -124,14 +124,14 @@ export type LabTestCreateInput = z.infer<typeof LabTestCreateSchema>;
 export type LabTestUpdateInput = z.infer<typeof LabTestUpdateSchema>;
 export type LabTestFilterInput = z.infer<typeof LabTestFilterSchema>;
 export const AddNewBillInputSchema = z.object({
-  clinicId: z.string().uuid('Invalid Clinic ID'),
-  appointmentId: z.string().uuid('Invalid Appointment ID'),
+  clinicId: z.uuid('Invalid Clinic ID'),
+  appointmentId: z.uuid('Invalid Appointment ID'),
 
   // Optional: If provided, adds to this specific bill/payment record
-  billId: z.string().uuid().optional(),
+  billId: z.uuid().optional(),
 
   // Service Details
-  serviceId: z.string().uuid('Invalid Service ID'),
+  serviceId: z.uuid('Invalid Service ID'),
   serviceDate: z.union([z.date(), z.string().datetime()]).default(() => new Date()),
 
   // Financials

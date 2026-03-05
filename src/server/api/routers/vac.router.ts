@@ -32,7 +32,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    * Get immunization by ID
    * Service handles caching internally
    */
-  getImmunizationById: protectedProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ ctx, input }) => {
+  getImmunizationById: protectedProcedure.input(z.object({ id: z.uuid() })).query(async ({ ctx, input }) => {
     try {
       const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
@@ -59,7 +59,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
   getImmunizationsByPatient: protectedProcedure
     .input(
       z.object({
-        patientId: z.string().uuid(),
+        patientId: z.uuid(),
         includeCompleted: z.boolean().optional().default(true),
         limit: z.number().min(1).max(100).optional(),
         offset: z.number().min(0).optional()
@@ -325,7 +325,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getPatientVaccinationSummary: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid() }))
+    .input(z.object({ patientId: z.uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -350,27 +350,25 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    * Get due vaccinations for a patient
    * Service handles caching internally
    */
-  getDueVaccinations: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const clinicId = ctx.session?.user?.clinic?.id;
-        if (!(clinicId && input.patientId)) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Clinic ID or Patient ID not found'
-          });
-        }
-
-        return await vaccinationService.getDueVaccinesForPatient(input.patientId, clinicId);
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+  getDueVaccinations: protectedProcedure.input(z.object({ patientId: z.uuid() })).query(async ({ ctx, input }) => {
+    try {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!(clinicId && input.patientId)) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch due vaccinations'
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID or Patient ID not found'
         });
       }
-    }),
+
+      return await vaccinationService.getDueVaccinesForPatient(input.patientId, clinicId);
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch due vaccinations'
+      });
+    }
+  }),
 
   /**
    * Calculate due vaccines for a patient
@@ -379,7 +377,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
   calculateDueVaccines: protectedProcedure
     .input(
       calculateDueVaccinesSchema.extend({
-        patientId: z.string().uuid()
+        patientId: z.uuid()
       })
     )
     .query(async ({ ctx, input }) => {
@@ -406,27 +404,25 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    * Get patient immunization record
    * Service handles caching internally
    */
-  getPatientImmunizations: protectedProcedure
-    .input(z.object({ patientId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const clinicId = ctx.session?.user?.clinic?.id;
-        if (!(clinicId && input.patientId)) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Clinic ID or Patient ID not found'
-          });
-        }
-
-        return await vaccinationService.getPatientImmunizations(input.patientId, clinicId);
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+  getPatientImmunizations: protectedProcedure.input(z.object({ patientId: z.uuid() })).query(async ({ ctx, input }) => {
+    try {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!(clinicId && input.patientId)) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to fetch immunization record'
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID or Patient ID not found'
         });
       }
-    }),
+
+      return await vaccinationService.getPatientImmunizations(input.patientId, clinicId);
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch immunization record'
+      });
+    }
+  }),
 
   // ==================== MUTATION PROCEDURES ====================
 
@@ -541,7 +537,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
   updateImmunizationStatus: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         status: z.enum(['COMPLETED', 'OVERDUE', 'DELAYED', 'EXEMPTED']),
         notes: z.string().optional()
       })
@@ -578,35 +574,33 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    * Complete immunization
    * Service handles cache invalidation internally
    */
-  completeImmunization: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const clinicId = ctx.session?.user?.clinic?.id;
-        const userId = ctx.user.id;
+  completeImmunization: protectedProcedure.input(z.object({ id: z.uuid() })).mutation(async ({ ctx, input }) => {
+    try {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      const userId = ctx.user.id;
 
-        if (!clinicId) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Clinic ID not found'
-          });
-        }
-
-        const result = await vaccinationService.completeImmunization(input.id, clinicId, userId);
-
-        return {
-          success: true,
-          message: 'Immunization completed successfully',
-          data: result
-        };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+      if (!clinicId) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Failed to complete immunization'
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found'
         });
       }
-    }),
+
+      const result = await vaccinationService.completeImmunization(input.id, clinicId, userId);
+
+      return {
+        success: true,
+        message: 'Immunization completed successfully',
+        data: result
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to complete immunization'
+      });
+    }
+  }),
 
   /**
    * Delay immunization
@@ -615,7 +609,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
   delayImmunization: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         notes: z.string().optional(),
         newDate: z.date().optional()
       })
@@ -655,10 +649,10 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
   scheduleDueVaccinations: protectedProcedure
     .input(
       z.object({
-        patientId: z.string().uuid(),
+        patientId: z.uuid(),
         vaccineName: z.string().optional(),
         dueDate: z.date().optional(),
-        clinicId: z.string().uuid().optional() // Optional override for clinic ID
+        clinicId: z.uuid().optional() // Optional override for clinic ID
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -701,8 +695,8 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
   deleteImmunization: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
-        patientId: z.string().uuid()
+        id: z.uuid(),
+        patientId: z.uuid()
       })
     )
     .mutation(async ({ ctx, input }) => {

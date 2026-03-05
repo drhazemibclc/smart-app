@@ -2,6 +2,7 @@ import { Baby, Calendar, FileText, HeartPulse, Stethoscope, User } from 'lucide-
 import Link from 'next/link';
 import type React from 'react';
 
+import { AuthFooter } from './auth-footer'; // Import the new component
 import { DownloadAppButton } from './download-app-button';
 import { RoleCard } from './role-card';
 import { RegistrationRole, type RoleOption } from './types';
@@ -90,10 +91,7 @@ const ChooseRole: React.FC = () => {
           </div>
         </div>
       </main>
-
-      <footer className='py-6 text-center text-slate-400 text-sm dark:text-slate-600'>
-        © {new Date().getFullYear()} StarterKit. MIT License.
-      </footer>
+      <AuthFooter /> {/* Use the client component here */}
     </div>
   );
 };

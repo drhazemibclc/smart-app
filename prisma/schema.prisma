@@ -3,7 +3,6 @@ generator client {
   output                 = "../src/generated/prisma"
   previewFeatures        = ["relationJoins", "views"]
   generatedFileExtension = "ts"
-  importFileExtension    = "ts"
   moduleFormat           = "esm"
   runtime                = "bun"
 }
@@ -549,10 +548,20 @@ model Prescription {
 }
 
 model Drug {
-  id              String           @id @default(uuid())
-  name            String           @unique
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id          String   @id @default(uuid())
+  name        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  genericName String?
+  strength    String?
+
+  strengthUnit         String?
+  form                 String?
+  category             String?
+  isAvailable          Boolean?
+  requiresPrescription Boolean?
+  isControlled         Boolean?
+
   guidelines      DoseGuideline[]
   prescribedItems PrescribedItem[]
 }

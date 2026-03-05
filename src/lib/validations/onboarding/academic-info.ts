@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 const AcademicInfoSchema = z.object({
-  year: z.string().uuid(),
-  class: z.string().uuid(),
-  branch: z.string().uuid()
+  year: z.uuid(),
+  class: z.uuid(),
+  branch: z.uuid()
 });
 
 export default AcademicInfoSchema;

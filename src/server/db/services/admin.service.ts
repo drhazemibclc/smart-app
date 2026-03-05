@@ -17,6 +17,7 @@ import { Prisma, type PrismaClient } from '@/generated/prisma/client';
 import { logger } from '@/logger';
 import { CACHE_KEYS, CACHE_TTL } from '@/server/redis/cache-keys';
 
+import type { MonthlyTrend } from '../../../types/prescription';
 import {
   CreateNewDoctorInputSchema,
   type CreateStaffInput,
@@ -31,7 +32,7 @@ import {
   staffUpdateSchema,
   statusChangeSchema
 } from '../../../zodSchemas';
-import { ValidationError } from '..';
+import { prescriptionRepo, ValidationError } from '..';
 import { prisma } from '../client';
 import { AppError, ConflictError, NotFoundError } from '../error';
 import * as appointmentRepo from '../repositories/appointment.repo';
@@ -40,6 +41,7 @@ import * as doctorRepo from '../repositories/doctor.repo';
 import * as growthRepo from '../repositories/growth.repo';
 import * as patientRepo from '../repositories/patient.repo';
 import * as paymentRepo from '../repositories/payment.repo';
+import type { PrescriptionStats } from '../repositories/prescription.repo';
 import * as serviceRepo from '../repositories/service.repo';
 import * as staffRepo from '../repositories/staff.repo';
 import * as vaccinationRepo from '../repositories/vac.repository';
@@ -47,6 +49,11 @@ import type { Appointment, AppointmentStatus } from '../types';
 import { toNumber } from '../utils';
 import { cacheService } from './cache.service';
 
+interface DoctorStatsRaw {
+  doctorId: string;
+  status: string;
+  _count: number;
+}
 // ==================== TYPE DEFINITIONS ====================
 
 export interface AdminDashboardStats {
@@ -1268,7 +1275,724 @@ export class AdminService {
     }
   }
 
+  async getPrescriptionStats(
+    clinicId: string,
+    options?: {
+      startDate?: Date;
+      endDate?: Date;
+      skipCache?: boolean;
+    }
+  ): Promise<PrescriptionStats> {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const cacheKey =
+      options?.startDate && options?.endDate
+        ? CACHE_KEYS.PRESCRIPTION_STATS_RANGE(
+            validatedClinicId,
+            options.startDate.toISOString(),
+            options.endDate.toISOString()
+          )
+        : CACHE_KEYS.PRESCRIPTION_STATS(validatedClinicId);
+
+    const startTime = Date.now();
+
+    try {
+      // Check cache
+      if (this.CACHE_ENABLED && !options?.skipCache) {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+          logger.debug('Prescription stats served from cache', {
+            clinicId: validatedClinicId,
+            duration: Date.now() - startTime
+          });
+          return cached as PrescriptionStats;
+        }
+      }
+
+      let stats: PrescriptionStats;
+
+      if (options?.startDate && options?.endDate) {
+        // Get stats for date range
+        const rangeStats = await prescriptionRepo.getStatsByDateRange(
+          this.db,
+          validatedClinicId,
+          options.startDate,
+          options.endDate
+        );
+
+        // Calculate derived metrics
+        const _completionRate = rangeStats.total > 0 ? Math.round((rangeStats.completed / rangeStats.total) * 100) : 0;
+
+        const _activeRate = rangeStats.total > 0 ? Math.round((rangeStats.active / rangeStats.total) * 100) : 0;
+
+        return {
+          ...rangeStats,
+          dateRange: {
+            start: options.startDate.toISOString(),
+            end: options.endDate.toISOString()
+          }
+        } as PrescriptionStats & {
+          dateRange: { start: string; end: string };
+          completionRate: number;
+          activeRate: number;
+        };
+      }
+      // Get current stats
+      stats = await prescriptionRepo.getStatsByClinic(this.db, validatedClinicId);
+
+      // Cache the result
+      if (this.CACHE_ENABLED) {
+        await cacheService.set(cacheKey, stats, CACHE_TTL.PRESCRIPTION_STATS);
+      }
+
+      logger.info('Prescription stats fetched', {
+        clinicId: validatedClinicId,
+        duration: Date.now() - startTime,
+        total: stats.total
+      });
+
+      return stats;
+    } catch (error) {
+      logger.error('Failed to get prescription stats', {
+        error,
+        clinicId: validatedClinicId
+      });
+      throw new AppError('Unable to fetch prescription statistics', {
+        code: 'PRESCRIPTION_STATS_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+
+  async getPrescriptionStatsByDateRange(
+    clinicId: string,
+    startDate: Date,
+    endDate: Date,
+    options?: {
+      compareWithPrevious?: boolean;
+      skipCache?: boolean;
+    }
+  ): Promise<
+    PrescriptionStats & {
+      dateRange: { start: string; end: string };
+      trends?: {
+        total: number;
+        active: number;
+        completed: number;
+        cancelled: number;
+      };
+      previousPeriod?: {
+        total: number;
+        active: number;
+        completed: number;
+        cancelled: number;
+      };
+    }
+  > {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const validatedStartDate = z.date().parse(startDate);
+    const validatedEndDate = z.date().parse(endDate);
+
+    // Validate date range
+    if (validatedStartDate > validatedEndDate) {
+      throw new ValidationError('Start date must be before end date');
+    }
+
+    const cacheKey = CACHE_KEYS.PRESCRIPTION_STATS_RANGE(
+      validatedClinicId,
+      validatedStartDate.toISOString(),
+      validatedEndDate.toISOString()
+    );
+
+    const startTime = Date.now();
+
+    try {
+      // Check cache
+      if (this.CACHE_ENABLED && !options?.skipCache) {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+          return cached as typeof result;
+        }
+      }
+
+      // Get current period stats
+      const currentStats = await prescriptionRepo.getStatsByDateRange(
+        this.db,
+        validatedClinicId,
+        validatedStartDate,
+        validatedEndDate
+      );
+
+      // Calculate derived metrics
+      const completionRate =
+        currentStats.total > 0 ? Math.round((currentStats.completed / currentStats.total) * 100) : 0;
+
+      const activeRate = currentStats.total > 0 ? Math.round((currentStats.active / currentStats.total) * 100) : 0;
+
+      const result: PrescriptionStats & {
+        dateRange: { start: string; end: string };
+        completionRate: number;
+        activeRate: number;
+        trends?: {
+          total: number;
+          active: number;
+          completed: number;
+          cancelled: number;
+        };
+        previousPeriod?: {
+          total: number;
+          active: number;
+          completed: number;
+          cancelled: number;
+        };
+      } = {
+        ...currentStats,
+        completionRate,
+        activeRate,
+        dateRange: {
+          start: validatedStartDate.toISOString(),
+          end: validatedEndDate.toISOString()
+        }
+      };
+
+      // Compare with previous period if requested
+      if (options?.compareWithPrevious) {
+        const periodLength = validatedEndDate.getTime() - validatedStartDate.getTime();
+        const previousStartDate = new Date(validatedStartDate.getTime() - periodLength);
+        const previousEndDate = new Date(validatedEndDate.getTime() - periodLength);
+
+        const previousStats = await prescriptionRepo.getStatsByDateRange(
+          this.db,
+          validatedClinicId,
+          previousStartDate,
+          previousEndDate
+        );
+
+        // Calculate trends
+        const totalChange =
+          previousStats.total > 0 ? ((currentStats.total - previousStats.total) / previousStats.total) * 100 : 0;
+
+        result.trends = {
+          total: Math.round(totalChange * 10) / 10, // Round to 1 decimal
+          active: currentStats.active - previousStats.active,
+          completed: currentStats.completed - previousStats.completed,
+          cancelled: currentStats.cancelled - previousStats.cancelled
+        };
+
+        result.previousPeriod = {
+          total: previousStats.total,
+          active: previousStats.active,
+          completed: previousStats.completed,
+          cancelled: previousStats.cancelled
+        };
+      }
+
+      // Cache the result
+      if (this.CACHE_ENABLED) {
+        await cacheService.set(cacheKey, result, CACHE_TTL.PRESCRIPTION_STATS);
+      }
+
+      logger.info('Prescription stats by date range fetched', {
+        clinicId: validatedClinicId,
+        duration: Date.now() - startTime,
+        startDate: validatedStartDate,
+        endDate: validatedEndDate,
+        total: currentStats.total
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to get prescription stats by date range', {
+        error,
+        clinicId: validatedClinicId,
+        startDate: validatedStartDate,
+        endDate: validatedEndDate
+      });
+      throw new AppError('Unable to fetch prescription statistics by date range', {
+        code: 'PRESCRIPTION_STATS_RANGE_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+
+  async getPrescriptionStatsForMonth(
+    clinicId: string,
+    year: number,
+    month: number,
+    options?: { compareWithPrevious?: boolean }
+  ): Promise<
+    PrescriptionStats & {
+      month: string;
+      year: number;
+      monthName: string;
+    }
+  > {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const validatedYear = z.number().int().min(2000).max(2100).parse(year);
+    const validatedMonth = z.number().int().min(1).max(12).parse(month);
+
+    const startDate = new Date(validatedYear, validatedMonth - 1, 1);
+    const endDate = new Date(validatedYear, validatedMonth, 0, 23, 59, 59, 999);
+
+    const stats = await this.getPrescriptionStatsByDateRange(validatedClinicId, startDate, endDate, {
+      compareWithPrevious: options?.compareWithPrevious
+    });
+
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+
+    return {
+      ...stats,
+      month: monthNames[validatedMonth - 1],
+      monthName: monthNames[validatedMonth - 1],
+      year: validatedYear
+    };
+  }
+
+  async getPrescriptionMonthlyTrends(
+    clinicId: string,
+    months = 12,
+    options?: { skipCache?: boolean }
+  ): Promise<MonthlyTrend[]> {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const validatedMonths = z.number().int().min(1).max(36).parse(months);
+
+    const cacheKey = CACHE_KEYS.PRESCRIPTION_TRENDS(validatedClinicId);
+    const startTime = Date.now();
+
+    try {
+      // Check cache
+      if (this.CACHE_ENABLED && !options?.skipCache) {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+          logger.debug('Prescription trends served from cache', {
+            clinicId: validatedClinicId,
+            months: validatedMonths,
+            duration: Date.now() - startTime
+          });
+          return cached as MonthlyTrend[];
+        }
+      }
+
+      // Get raw trends from repository
+      const rawTrends = await prescriptionRepo.getMonthlyTrends(this.db, validatedClinicId, validatedMonths);
+
+      // Group by month and transform into structured format
+      const trendsMap = new Map<string, MonthlyTrend>();
+
+      for (const item of rawTrends) {
+        const monthKey = `${item.year}-${item.month.toString().padStart(2, '0')}`;
+
+        if (!trendsMap.has(monthKey)) {
+          trendsMap.set(monthKey, {
+            month: monthKey,
+            monthName: new Date(item.year, Number.parseInt(item.month, 10) - 1, 1).toLocaleString('default', {
+              month: 'short'
+            }),
+            year: item.year,
+            total: 0,
+            active: 0,
+            completed: 0,
+            cancelled: 0,
+            growth: 0
+          });
+        }
+
+        const trend = trendsMap.get(monthKey);
+        if (!trend) continue;
+
+        const count = Number(item.count);
+        trend.total += count;
+
+        // Add to specific status count
+        switch (item.status) {
+          case 'active':
+            trend.active += count;
+            break;
+          case 'completed':
+            trend.completed += count;
+            break;
+          case 'cancelled':
+            trend.cancelled += count;
+            break;
+        }
+      }
+
+      // Sort chronologically
+      const trends = Array.from(trendsMap.values()).sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.month.localeCompare(b.month);
+      });
+
+      // Calculate month-over-month growth
+      for (let i = 1; i < trends.length; i++) {
+        const prevTotal = trends[i - 1].total;
+        if (prevTotal > 0) {
+          trends[i].growth = Math.round(((trends[i].total - prevTotal) / prevTotal) * 100 * 10) / 10; // Round to 1 decimal
+        }
+      }
+
+      // Cache the result (trends can be cached longer)
+      if (this.CACHE_ENABLED) {
+        await cacheService.set(cacheKey, trends, CACHE_TTL.PRESCRIPTION_TRENDS);
+      }
+
+      logger.info('Prescription monthly trends fetched', {
+        clinicId: validatedClinicId,
+        months: validatedMonths,
+        duration: Date.now() - startTime,
+        trendMonths: trends.length
+      });
+
+      return trends;
+    } catch (error) {
+      logger.error('Failed to get prescription monthly trends', {
+        error,
+        clinicId: validatedClinicId,
+        months: validatedMonths
+      });
+      throw new AppError('Unable to fetch prescription trends', {
+        code: 'PRESCRIPTION_TRENDS_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+  async getTopPrescribedMedications(
+    clinicId: string,
+    limit = 10,
+    options?: {
+      startDate?: Date;
+      endDate?: Date;
+      skipCache?: boolean;
+    }
+  ): Promise<
+    Array<{
+      drugName: string;
+      prescriptionCount: number;
+      uniquePatients: number;
+    }>
+  > {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const validatedLimit = z.number().int().min(5).max(50).parse(limit);
+
+    const cacheKey =
+      options?.startDate && options?.endDate
+        ? CACHE_KEYS.TOP_MEDICATIONS_RANGE(
+            validatedClinicId,
+            options.startDate.toISOString(),
+            options.endDate.toISOString()
+          )
+        : CACHE_KEYS.TOP_MEDICATIONS(validatedClinicId, validatedLimit);
+
+    try {
+      if (this.CACHE_ENABLED && !options?.skipCache) {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+          return cached as Array<{
+            drugName: string;
+            prescriptionCount: number;
+            uniquePatients: number;
+          }>;
+        }
+      }
+
+      const medications = await prescriptionRepo.getTopMedications(this.db, validatedClinicId, validatedLimit);
+
+      const result = medications.map(m => ({
+        drugName: m.drug_name,
+        prescriptionCount: Number(m.prescription_count),
+        uniquePatients: Number(m.unique_patients)
+      }));
+
+      if (this.CACHE_ENABLED) {
+        await cacheService.set(cacheKey, result, CACHE_TTL.TOP_MEDICATIONS);
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to get top medications', { error, clinicId: validatedClinicId });
+      throw new AppError('Unable to fetch top medications', {
+        code: 'TOP_MEDICATIONS_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+
+  async getPrescriptionDashboardStats(
+    clinicId: string,
+    options?: { skipCache?: boolean }
+  ): Promise<{
+    current: PrescriptionStats;
+    trends: MonthlyTrend[];
+    topMedications: Array<{ drugName: string; count: number; uniquePatients: number }>;
+    doctorStats: Array<{ doctorId: string; doctorName?: string; total: number; active: number }>;
+    expiringSoon: number;
+  }> {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const cacheKey = CACHE_KEYS.PRESCRIPTION_DASHBOARD(validatedClinicId);
+    const startTime = Date.now();
+
+    try {
+      if (this.CACHE_ENABLED && !options?.skipCache) {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) {
+          return cached as typeof result;
+        }
+      }
+
+      const now = new Date();
+
+      // Run all queries in parallel
+      const [currentStats, monthlyTrends, topMedications, doctorStatsRaw, expiringSoonCount] = await Promise.allSettled(
+        [
+          this.getPrescriptionStats(validatedClinicId, { skipCache: true }),
+          this.getPrescriptionMonthlyTrends(validatedClinicId, 12, { skipCache: true }),
+          this.getTopPrescribedMedications(validatedClinicId, 10, { skipCache: true }),
+          prescriptionRepo.getDoctorStats(this.db, validatedClinicId),
+          prescriptionRepo.countPrescriptions(this.db, {
+            clinicId: validatedClinicId,
+            status: 'active',
+            endDate: {
+              lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+              gte: now
+            }
+          })
+        ]
+      );
+
+      // Handle partial failures
+      const topMedsResult = this.unwrapPromise(topMedications, []);
+
+      const result = {
+        current: this.unwrapPromise(currentStats, {
+          total: 0,
+          active: 0,
+          completed: 0,
+          cancelled: 0
+        }),
+        trends: this.unwrapPromise(monthlyTrends, []),
+        topMedications: topMedsResult.map(m => ({
+          drugName: m.drugName,
+          count: m.prescriptionCount,
+          uniquePatients: m.uniquePatients
+        })),
+        doctorStats: await this.enhanceDoctorStats(
+          doctorStatsRaw.status === 'fulfilled'
+            ? (doctorStatsRaw as PromiseFulfilledResult<DoctorStatsRaw[]>).value
+            : [],
+          validatedClinicId
+        ),
+        expiringSoon:
+          expiringSoonCount && expiringSoonCount.status === 'fulfilled'
+            ? (expiringSoonCount as unknown as PromiseFulfilledResult<number>).value
+            : 0
+        // expiringSoon: expiringSoonCount && expiringSoonCount.status === 'fulfilled' ? (expiringSoonCount as unknown as PromiseFulfilledResult<number>).value : 0
+      };
+
+      if (this.CACHE_ENABLED) {
+        await cacheService.set(cacheKey, result, CACHE_TTL.DASHBOARD);
+      }
+
+      logger.info('Prescription dashboard stats fetched', {
+        clinicId: validatedClinicId,
+        duration: Date.now() - startTime
+      });
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to get prescription dashboard stats', {
+        error,
+        clinicId: validatedClinicId
+      });
+      throw new AppError('Unable to fetch prescription dashboard statistics', {
+        code: 'PRESCRIPTION_DASHBOARD_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+  async getPrescriptionsExpiringSoon(
+    clinicId: string,
+    daysThreshold = 7
+  ): Promise<
+    Array<{
+      id: string;
+      patientName: string;
+      medicationName?: string | null;
+      endDate: Date;
+      daysRemaining: number;
+      doctorName?: string;
+    }>
+  > {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const validatedDays = z.number().int().min(1).max(30).parse(daysThreshold);
+
+    try {
+      const expiringPrescriptions = await prescriptionRepo.findPrescriptionsExpiringSoon(
+        this.db,
+        validatedClinicId,
+        validatedDays
+      );
+
+      const now = new Date();
+
+      return expiringPrescriptions.map(p => {
+        const endDate = p.endDate ?? new Date();
+        const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        return {
+          id: p.id,
+          patientName: p.patient ? `${p.patient.firstName} ${p.patient.lastName}` : 'Unknown',
+          medicationName: p.medicationName,
+          endDate,
+          daysRemaining,
+          doctorName: p.doctor?.name
+        };
+      });
+    } catch (error) {
+      logger.error('Failed to get expiring prescriptions', {
+        error,
+        clinicId: validatedClinicId
+      });
+      throw new AppError('Unable to fetch expiring prescriptions', {
+        code: 'EXPIRING_PRESCRIPTIONS_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+
+  async comparePrescriptionPeriods(
+    clinicId: string,
+    period1Start: Date,
+    period1End: Date,
+    period2Start: Date,
+    period2End: Date
+  ): Promise<{
+    period1: PrescriptionStats & { dateRange: { start: string; end: string } };
+    period2: PrescriptionStats & { dateRange: { start: string; end: string } };
+    changes: {
+      total: number; // percentage change
+      active: number; // absolute change
+      completed: number; // absolute change
+      cancelled: number; // absolute change
+    };
+  }> {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+
+    const [period1Stats, period2Stats] = await Promise.all([
+      this.getPrescriptionStatsByDateRange(validatedClinicId, period1Start, period1End, { compareWithPrevious: false }),
+      this.getPrescriptionStatsByDateRange(validatedClinicId, period2Start, period2End, { compareWithPrevious: false })
+    ]);
+
+    const totalChange =
+      period1Stats.total > 0 ? ((period2Stats.total - period1Stats.total) / period1Stats.total) * 100 : 0;
+
+    return {
+      period1: period1Stats,
+      period2: period2Stats,
+      changes: {
+        total: Math.round(totalChange * 10) / 10,
+        active: period2Stats.active - period1Stats.active,
+        completed: period2Stats.completed - period1Stats.completed,
+        cancelled: period2Stats.cancelled - period1Stats.cancelled
+      }
+    };
+  }
+  async invalidatePrescriptionCaches(
+    clinicId: string,
+    options?: {
+      prescriptionId?: string;
+      dateRange?: { start: Date; end: Date };
+    }
+  ): Promise<void> {
+    const validatedClinicId = z.string().uuid().parse(clinicId);
+
+    try {
+      // Invalidate main caches
+      await Promise.all([
+        cacheService.invalidate(CACHE_KEYS.PRESCRIPTION_STATS(validatedClinicId)),
+        cacheService.invalidate(CACHE_KEYS.PRESCRIPTION_DASHBOARD(validatedClinicId)),
+        cacheService.invalidate(CACHE_KEYS.PRESCRIPTION_TRENDS(validatedClinicId)),
+        cacheService.invalidate(CACHE_KEYS.PRESCRIPTION_TRENDS(validatedClinicId)),
+        // cacheService.invalidate(CACHE_KEYS.TOP_MEDICATIONS(validatedClinicId, 10)),
+        cacheService.invalidatePattern(`prescriptions:stats:range:${validatedClinicId}:*`),
+        cacheService.invalidatePattern(`prescriptions:top-meds:range:${validatedClinicId}:*`),
+        cacheService.invalidateClinicCaches(validatedClinicId)
+      ]);
+
+      // Invalidate specific prescription if provided
+      if (options?.prescriptionId) {
+        await cacheService.invalidate(CACHE_KEYS.PRESCRIPTION(options.prescriptionId));
+      }
+
+      // Invalidate date range if provided
+      if (options?.dateRange) {
+        const cacheKey = CACHE_KEYS.PRESCRIPTION_STATS_RANGE(
+          validatedClinicId,
+          options.dateRange.start.toISOString(),
+          options.dateRange.end.toISOString()
+        );
+        await cacheService.invalidate(cacheKey);
+      }
+
+      logger.info('Prescription caches invalidated', {
+        clinicId: validatedClinicId,
+        prescriptionId: options?.prescriptionId
+      });
+    } catch (error) {
+      logger.error('Failed to invalidate prescription caches', {
+        error,
+        clinicId: validatedClinicId
+      });
+    }
+  }
   // ==================== HELPER METHODS ====================
+  private async enhanceDoctorStats(
+    stats: Array<{ doctorId: string; status: string; _count: number }>,
+    clinicId: string
+  ): Promise<Array<{ doctorId: string; doctorName?: string; total: number; active: number }>> {
+    // Group by doctor
+    const doctorMap = new Map<string, { total: number; active: number }>();
+
+    for (const stat of stats) {
+      if (!doctorMap.has(stat.doctorId)) {
+        doctorMap.set(stat.doctorId, { total: 0, active: 0 });
+      }
+
+      const doctorStats = doctorMap.get(stat.doctorId);
+      if (!doctorStats) continue;
+      doctorStats.total += stat._count;
+
+      if (stat.status === 'active') {
+        doctorStats.active += stat._count;
+      }
+    }
+
+    // Fetch doctor names (you might want to batch this)
+    const result = await Promise.all(
+      Array.from(doctorMap.entries()).map(async ([doctorId, stats]) => {
+        const doctor = await doctorRepo.findDoctorById?.(this.db, doctorId, clinicId);
+        return {
+          doctorId,
+          doctorName: doctor?.name,
+          total: stats.total,
+          active: stats.active
+        };
+      })
+    );
+
+    return result.sort((a, b) => b.total - a.total);
+  }
 
   private calculateOccupancyRate(
     totalAppointments: number,

@@ -24,7 +24,12 @@ export function withCache<Args extends unknown[], R>(
     const { tags = [], profile, prefix } = options;
 
     // Apply cache duration
-    cacheLife(cacheProfiles[profile]);
+    const profileData = cacheProfiles[profile];
+
+    // Ensure we pass a flat profile object to cacheLife to avoid nested 'stats' object errors
+    if ('stale' in profileData) {
+      cacheLife(profileData as { stale?: number; revalidate?: number; expire?: number });
+    }
 
     // Apply tags (no return inside forEach)
     for (const tag of tags) {
