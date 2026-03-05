@@ -43,7 +43,7 @@ export const doctorRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const clinicId = input?.clinicId || ctx.session?.user.clinic?.id;
+      const clinicId = input?.clinicId || ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -71,7 +71,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getById: protectedProcedure.input(DoctorByIdSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -95,7 +95,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getWithAppointments: protectedProcedure.input(DoctorByIdSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -119,7 +119,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles caching internally (short TTL)
    */
   getAvailable: protectedProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -142,7 +142,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles caching internally (short TTL)
    */
   getTodaySchedule: protectedProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -165,7 +165,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getPaginated: protectedProcedure.input(DoctorListSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -193,7 +193,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     const userId = ctx.user.id;
 
     if (!(clinicId && userId)) {
@@ -227,7 +227,7 @@ export const doctorRouter = createTRPCRouter({
    * Get working days for a doctor
    */
   getWorkingDays: protectedProcedure.input(DoctorByIdSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -253,7 +253,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles cache invalidation internally
    */
   upsert: protectedProcedure.input(CreateDoctorSchema).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     const userId = ctx.user.id;
 
     if (!(clinicId && userId)) {
@@ -285,7 +285,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles cache invalidation internally
    */
   update: protectedProcedure.input(UpdateDoctorInputSchema).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     const userId = ctx.user.id;
 
     if (!(clinicId && userId)) {
@@ -317,7 +317,7 @@ export const doctorRouter = createTRPCRouter({
    * Service handles cache invalidation internally
    */
   delete: protectedProcedure.input(z.object({ id: z.uuid() })).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     const userId = ctx.user.id;
 
     if (!(clinicId && userId)) {
@@ -361,7 +361,7 @@ export const doctorRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'BAD_REQUEST',

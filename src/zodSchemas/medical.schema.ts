@@ -14,7 +14,7 @@ export const MedicalRecordBaseSchema = z.object({
   treatmentPlan: z.string().max(3000).optional(),
   labRequest: z.string().max(2000).optional(),
   notes: z.string().max(5000).optional(),
-  attachments: z.string().url().optional(),
+  attachments: z.url().optional(),
   followUpDate: dateSchema.optional(),
   // SOAP note structure
   subjective: z.string().max(3000).optional(),
@@ -49,7 +49,7 @@ export const MedicalRecordFilterSchema = z.object({
       to: dateSchema.optional()
     })
     .optional(),
-  vitalSigns: VitalSignsBaseSchema.partial().optional(),
+  vitalSigns: VitalSignsBaseSchema.optional(),
   search: z.string().max(100).optional(),
   page: z.number().int().min(1).default(1),
   sortBy: z.enum(['createdAt', 'patientName', 'doctorName', 'followUpDate']).default('createdAt'),

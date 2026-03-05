@@ -160,32 +160,71 @@ export const DiagnosisByIdSchema = DiagnosisBaseSchema.extend({
   id: idSchema
 });
 
-export const VitalSignsByMedicalRecordSchema = VitalSignsBaseSchema.pick({
-  medicalId: true
+export const VitalSignsByMedicalRecordSchema = z.object({
+  medicalId: VitalSignsBaseSchema.shape.medicalId
 });
 
 // ==================== VITAL SIGNS SCHEMAS ====================
 
 export const VitalSignsCreateSchema = VitalSignsBaseSchema;
-export const VitalSignsByIdSchema = VitalSignsBaseSchema.pick({
-  id: true
+export const VitalSignsByIdSchema = z.object({
+  id: VitalSignsBaseSchema.shape.id
 });
-export const VitalSignsByPatientSchema = VitalSignsBaseSchema.extend({
-  startDate: dateSchema.optional(),
-  endDate: dateSchema.optional(),
-
-  limit: z.number().int().min(1).max(100).optional()
+export const VitalSignsByPatientSchema = z
+  .object({
+    patientId: VitalSignsBaseSchema.shape.patientId,
+    clinicId: VitalSignsBaseSchema.shape.clinicId.optional(),
+    startDate: dateSchema.optional(),
+    endDate: dateSchema.optional(),
+    limit: z.number().int().min(1).max(100).default(50)
+  })
+  .refine(
+    data => {
+      if (data.startDate && data.endDate) {
+        return data.startDate <= data.endDate;
+      }
+      return true;
+    },
+    {
+      message: 'Start date must be before end date',
+      path: ['endDate']
+    }
+  );
+export const DiagnosisByMedicalRecordSchema = z.object({
+  medicalId: DiagnosisBaseSchema.shape.medicalId,
+  clinicId: DiagnosisBaseSchema.shape.clinicId
 });
-export const DiagnosisByMedicalRecordSchema = DiagnosisBaseSchema.pick({
-  medicalId: true,
-  clinicId: true
+export const VitalSignsUpdateSchema = z.object({
+  id: idSchema,
+  patientId: idSchema,
+  medicalId: idSchema.optional(),
+  encounterId: idSchema.optional(),
+  clinicId: clinicIdSchema,
+  recordedAt: dateSchema.default(() => new Date()),
+  // Temperature (Celsius)
+  bodyTemperature: temperatureSchema.optional(),
+  // Blood Pressure
+  systolic: z.number().min(50).max(250).optional(),
+  diastolic: z.number().min(30).max(150).optional(),
+  // Cardiovascular
+  heartRate: z.number().min(20).max(300).optional(),
+  // Respiratory
+  respiratoryRate: z.number().min(5).max(100).optional(),
+  oxygenSaturation: z.number().min(50).max(100).optional(),
+  // Patient context
+  gender: genderSchema.optional(),
+  ageDays: z.number().int().min(0).max(474_800).optional(),
+  ageMonths: z.number().int().min(0).max(1560).optional(),
+  // Additional measurements
+  height: z.number().min(20).max(300).optional(), // cm
+  weight: z.number().min(0.5).max(500).optional(), // kg
+  bmi: z.number().min(10).max(80).optional(),
+  // Notes
+  notes: z.string().max(1000).optional()
 });
-export const VitalSignsUpdateSchema = VitalSignsBaseSchema.partial().extend({
-  id: idSchema
-});
-export const DiagnosisByAppointmentSchema = DiagnosisBaseSchema.pick({
-  appointmentId: true,
-  clinicId: true
+export const DiagnosisByAppointmentSchema = z.object({
+  appointmentId: DiagnosisBaseSchema.shape.appointmentId,
+  clinicId: DiagnosisBaseSchema.shape.clinicId
 });
 export const VitalSignsFilterSchema = z.object({
   patientId: idSchema.optional(),

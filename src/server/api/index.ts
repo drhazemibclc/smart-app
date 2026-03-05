@@ -1,8 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 
+import { enhancedErrorFormatter } from '../utils/validation';
 import type { Context } from './context';
-import { enhancedErrorFormatter } from './utils/validation';
 
 // Initialize tRPC with proper typing
 const t = initTRPC.context<Context>().create({
@@ -63,7 +63,7 @@ const adminMiddleware = t.middleware(async ({ next, ctx }) => {
     });
   }
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'ADMIN') {
     console.log('Admin middleware: User is not admin, role:', user.role);
     throw new TRPCError({
       code: 'FORBIDDEN',

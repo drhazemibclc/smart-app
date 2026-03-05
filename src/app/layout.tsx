@@ -3,11 +3,10 @@ import { Suspense } from 'react';
 
 import '../styles/globals.css';
 
-import Header from '@/components/header';
-import Footer from '@/components/layout/footer';
+import Footer from '@/components/footer';
 import Providers from '@/components/providers';
-
-import { geistMono, geistSans } from '../styles/fonts';
+import { geistMono, geistSans } from '@/styles/fonts';
+import { HydrateClient } from '@/trpc/server';
 
 export const metadata: Metadata = {
   title: {
@@ -59,30 +58,31 @@ export const viewport: Viewport = {
   ]
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Temporarily disable all prefetching to isolate homepage issue
+  // Prefetch common data that will be used across the app
+  // This will be available in the HydrateClient
+  // void prefetch(trpc.health.healthCheck.queryOptions());
+
   return (
     <html
       lang='en'
       suppressHydrationWarning
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col bg-white text-gray-900 antialiased`}
         suppressHydrationWarning
       >
         <Providers>
-          <div className='relative flex min-h-screen flex-col'>
-            <Header />
-            <main className='flex-1'>{children}</main>
-            <Footer />
-          </div>
-
-          {/* Local analytics - works in all environments */}
-          <Suspense fallback={null} />
+          <HydrateClient>{children}</HydrateClient>
         </Providers>
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
       </body>
     </html>
   );

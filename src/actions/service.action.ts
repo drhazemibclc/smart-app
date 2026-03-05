@@ -13,8 +13,8 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache';
 
+import { getSession } from '@/lib/auth-server';
 import { CACHE_TAGS } from '@/lib/cache/utils/tags';
-import { getSession } from '@/server/api/utils/index';
 
 import { serviceService } from '../server/db/services';
 import {
@@ -49,7 +49,7 @@ export async function createServiceAction(input: unknown) {
   // 3. Delegate to service (add clinicId from session if not provided)
   const result = await serviceService.create({
     ...validated,
-    clinicId: validated.clinicId || session.user.clinic?.id
+    clinicId: validated.clinicId || session.user?.clinic?.id
   } as CreateServiceInput);
 
   // 4. Revalidate UI paths

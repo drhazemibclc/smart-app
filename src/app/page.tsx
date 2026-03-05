@@ -3,7 +3,6 @@
 import {
   ArrowRight,
   Award,
-  Baby,
   Calendar,
   Clock,
   Heart,
@@ -14,6 +13,8 @@ import {
   Star,
   Users
 } from 'lucide-react';
+import { cacheLife } from 'next/cache';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
@@ -26,11 +27,20 @@ import { SystemHealthBanner } from '@/components/home/system-health';
 import { Testimonials } from '@/components/home/testimonials';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+// ✅ Import your hero image
+import heroImage from '~/public/hero-dr.webp'; // Adjust path as needed
+
+import { SimpleHeader } from '../components/layout/app-header';
 
 export default async function HomePage() {
+  'use cache';
+  cacheLife('hours');
+
   return (
     <div className='flex min-h-screen flex-col'>
+      <SimpleHeader />
       <DevAsciiArt />
+
       {/* Hero Section */}
       <section className='relative overflow-hidden bg-linear-to-b from-primary/5 to-background py-20 md:py-32'>
         <div className='absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent' />
@@ -91,16 +101,25 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Hero Image */}
+            {/* Hero Image - Fixed structure */}
             <div className='relative hidden lg:block'>
               <div className='relative aspect-square overflow-hidden rounded-2xl bg-linear-to-br from-primary/20 to-secondary/20'>
                 <div className="absolute inset-0 bg-[url('/hero-pattern.svg')] opacity-10" />
-                <div className='absolute inset-0 flex items-center justify-center'>
-                  <Baby className='h-48 w-48 text-primary/40' />
+
+                {/* ✅ Fixed Image component with proper parent positioning */}
+                <div className='absolute inset-0'>
+                  <Image
+                    alt='Happy child at Pediatric Clinic'
+                    className='object-cover'
+                    fill
+                    priority
+                    sizes='(max-width: 1024px) 100vw, 50vw'
+                    src={heroImage}
+                  />
                 </div>
               </div>
 
-              {/* Floating Stats Cards */}
+              {/* ✅ Floating Stats Cards - Moved inside the image container's parent */}
               <div className='absolute top-1/2 -left-8 animate-float rounded-lg bg-background p-4 shadow-lg'>
                 <div className='flex items-center gap-3'>
                   <div className='rounded-full bg-green-100 p-2 dark:bg-green-900'>
@@ -229,7 +248,7 @@ export default async function HomePage() {
               size='lg'
               variant='secondary'
             >
-              <Link href='/appointments/new'>Book Appointment</Link>
+              <Link href='/dashboard/appointments/new'>Book Appointment</Link>
             </Button>
             <Button
               asChild

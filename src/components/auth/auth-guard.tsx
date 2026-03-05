@@ -43,7 +43,7 @@ export function AuthGuard({ children, role, fallback = null, unauthorized = null
   }
 
   // Role check (if required)
-  if (role && userRole !== role) {
+  if (role && userRole && userRole.toLowerCase() !== role.toLowerCase()) {
     return <>{unauthorized}</>;
   }
 

@@ -14,7 +14,7 @@
 
 import { revalidatePath, revalidateTag } from 'next/cache';
 
-import { getSession } from '@/server/api/utils/index';
+import { getSession } from '@/lib/auth-server';
 
 import type { ImmunizationCreateInput, ImmunizationUpdateInput } from '../server/db';
 import { vaccinationService } from '../server/db/services';
@@ -62,7 +62,7 @@ export async function scheduleVaccinationAction(input: unknown) {
     validated.patientId,
     validated.vaccineName,
     validated.dueDate,
-    session.user.clinic?.id ?? ''
+    session.user?.clinic?.id ?? ''
   );
 
   revalidatePath(`/dashboard/patients/${validated.patientId}/immunizations`);
@@ -120,7 +120,7 @@ export async function delayImmunizationAction(id: string, notes?: string) {
     throw new Error('Unauthorized');
   }
 
-  const result = await vaccinationService.updateImmunization(id, session.user.clinic?.id ?? '', { notes });
+  const result = await vaccinationService.updateImmunization(id, session.user?.clinic?.id ?? '', { notes });
 
   revalidatePath(`/dashboard/patients/${result.patientId}/immunizations`);
   revalidatePath('/dashboard/immunizations/overdue');

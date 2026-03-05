@@ -19,7 +19,7 @@ export default async function AppointmentsPage() {
     prefetch(
       trpc.appointment.list.queryOptions({
         page: 1,
-        clinic: session.user.clinic?.id || '',
+        clinic: session.user?.clinic?.id || '',
         updatedAt: new Date(),
         limit: 20,
         startDate: new Date(),

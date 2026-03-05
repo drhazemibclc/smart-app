@@ -3,7 +3,7 @@
 
 import { Toaster } from 'sonner';
 
-import { AuthProvider } from '../provider/auth-provider';
+import { AuthProvider } from './auth-provider';
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface ClientLayoutProps {
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   return (
-    <AuthProvider auth={null}>
+    <AuthProvider>
       {children}
       <Toaster
         closeButton

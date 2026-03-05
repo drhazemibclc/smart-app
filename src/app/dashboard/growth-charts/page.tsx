@@ -15,7 +15,7 @@ export default async function GrowthChartsPage() {
   // Get all patients in the user's clinic
   const patients = await prisma.patient.findMany({
     where: {
-      clinicId: session.user.clinic?.id,
+      clinicId: session.user?.clinic?.id,
       isActive: true
     },
     orderBy: {
@@ -38,7 +38,7 @@ export default async function GrowthChartsPage() {
 
   return (
     <GrowthChartsClient
-      clinicId={session.user.clinic?.id ?? ''}
+      clinicId={session.user?.clinic?.id ?? ''}
       patients={serializedPatients}
     />
   );

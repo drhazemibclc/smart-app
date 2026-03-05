@@ -48,8 +48,7 @@ export async function findMedicalRecordById(db: PrismaClient, id: string) {
           diagnosis: true,
           date: true,
           type: true
-        },
-        orderBy: { date: 'desc' }
+        }
       },
       labTest: {
         select: {
@@ -91,9 +90,7 @@ export async function findMedicalRecordById(db: PrismaClient, id: string) {
           heartRate: true,
           respiratoryRate: true,
           oxygenSaturation: true
-        },
-        orderBy: { recordedAt: 'desc' },
-        take: 1
+        }
       }
     }
   });
@@ -128,9 +125,7 @@ export async function findMedicalRecordsByPatient(
           id: true,
           diagnosis: true,
           date: true
-        },
-        orderBy: { date: 'desc' },
-        take: 1
+        }
       }
     },
     orderBy: { createdAt: 'desc' },
@@ -221,9 +216,7 @@ export async function findMedicalRecordsByClinic(
           respiratoryRate: true,
           oxygenSaturation: true,
           recordedAt: true
-        },
-        orderBy: { recordedAt: 'desc' },
-        take: 1
+        }
       },
       encounter: {
         select: {
@@ -231,9 +224,7 @@ export async function findMedicalRecordsByClinic(
           diagnosis: true,
           date: true,
           type: true
-        },
-        orderBy: { date: 'desc' },
-        take: 1
+        }
       }
     },
     orderBy: { createdAt: 'desc' },

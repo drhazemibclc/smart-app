@@ -5,21 +5,22 @@ import { Loader2, Lock, Mail } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import type { z } from 'zod'; // Changed to type import
+import type { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { authClient } from '@/lib/auth-client';
 
+import { signIn } from '../../actions/auth/auth-actions';
 import { signInWithGoogle } from '../../actions/auth/google-auth-actions';
 import { SignInSchema } from '../../zodSchemas';
 
 export function LoginInForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [, startTransition] = useTransition();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof SignInSchema>>({
@@ -34,30 +35,24 @@ export function LoginInForm() {
     setIsLoading(true);
     const toastId = toast.loading('Signing in...');
 
-    try {
-      const { error, data } = await authClient.signIn.email({
-        email: values.email,
-        password: values.password
-      });
+    startTransition(async () => {
+      try {
+        const result = await signIn(values);
 
-      if (error) {
-        toast.error(error.message || 'Invalid email or password', { id: toastId });
-        return;
-      }
+        if (!result.success) {
+          toast.error(result.error || 'Invalid email or password', { id: toastId });
+          return;
+        }
 
-      if (data?.user) {
         toast.success('Signed in successfully', { id: toastId });
-
-        // Refresh server components and navigate
         router.refresh();
-        router.push('/dashboard' as Route);
+      } catch (error) {
+        toast.error('An unexpected error occurred', { id: toastId });
+        console.error('Sign in error:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred', { id: toastId });
-      console.error('Sign in error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    });
   }
   return (
     <div className='fade-in slide-in-from-bottom-4 mx-auto w-full max-w-100 animate-in space-y-8 duration-500'>

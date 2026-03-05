@@ -1,12 +1,13 @@
-import { prisma } from '@/db/client';
-import 'dotenv/config'; // Ensure this is at the top for Better Auth Secrets
+import 'dotenv/config';
 
+import { prisma } from '../db';
 import { auth } from '.';
 
-// Define roles as per your UserRole enum if applicable,
-// otherwise use strings that match your logic
+// const prisma = new PrismaClient({
+//   accelerateUrl: process.env.DATABASE_URL ?? ''
+// }).$extends(withAccelerate());
 
-async function seedAdmin() {
+async function seedAdmin(): Promise<void> {
   console.log('🌱 Starting admin user, clinic, and doctor profile seed...');
 
   const adminEmail = 'hazem0302012@gmail.com';
@@ -25,11 +26,12 @@ async function seedAdmin() {
     });
 
     if (existingUser) {
-      // Delete relationships first
       await prisma.clinicMember.deleteMany({ where: { userId: existingUser.id } });
       if (existingUser.doctor) {
         await prisma.doctor.delete({ where: { id: existingUser.doctor.id } });
       }
+      await prisma.account.deleteMany({ where: { userId: existingUser.id } });
+      await prisma.session.deleteMany({ where: { userId: existingUser.id } });
       await prisma.user.delete({ where: { id: existingUser.id } });
       console.log(`🗑️ Removed existing user: ${adminEmail}`);
     }
@@ -51,39 +53,41 @@ async function seedAdmin() {
         address: 'Hurghada, Egypt',
         phone: adminPhone,
         email: adminEmail,
-        timezone: 'Africa/Cairo'
+        isDeleted: false
       }
     });
     console.log(`🏥 Clinic created: ${clinic.name}`);
 
-    // 2️⃣ CREATE USER VIA AUTH
-    console.log('Creating admin user via Better Auth...');
+    // 2️⃣ CREATE USER WITH BETTER AUTH (CORRECT APPROACH)
+    console.log('Creating admin user with Better Auth...');
 
-    // Note: Better Auth handles the hashing and database insertion
-    const signUpResult = await auth.api.createUser({
+    // Use Better Auth's internal adapter to create user properly
+    const user = await auth.api.signUpEmail({
       body: {
         email: adminEmail,
         password: adminPassword,
-        name: adminName,
-        role: 'admin'
+        name: adminName
       }
     });
 
-    const authUser = signUpResult.user;
-    console.log(`✅ User created via auth: ${authUser.email}`);
+    if (!user || !user.user) {
+      throw new Error('Failed to create user');
+    }
 
-    // 3️⃣ UPDATE USER WITH CUSTOM FIELDS
-    // Since Better Auth might not know about 'isAdmin' or 'phone' in the initial signUp
-    const user = await prisma.user.update({
-      where: { id: authUser.id },
+    console.log(`✅ User created: ${user.user.email}`);
+
+    // 3️⃣ UPDATE USER TO ADMIN ROLE
+    await prisma.user.update({
+      where: { id: user.user.id },
       data: {
-        emailVerified: true,
         isAdmin: true,
         role: 'ADMIN',
         phone: adminPhone,
-        clinicId: clinic.id // Link to the clinic in the User model
+        emailVerified: true,
+        clinicId: clinic.id
       }
     });
+    console.log('👑 User upgraded to admin');
 
     // 4️⃣ CREATE DOCTOR PROFILE
     const adminDoctor = await prisma.doctor.create({
@@ -95,7 +99,7 @@ async function seedAdmin() {
         licenseNumber: 'SMART-ADM-001',
         phone: adminPhone,
         clinicId: clinic.id,
-        userId: user.id,
+        userId: user.user.id,
         isActive: true,
         role: 'ADMIN'
       }
@@ -105,34 +109,24 @@ async function seedAdmin() {
     // 5️⃣ LINK VIA CLINIC MEMBER
     await prisma.clinicMember.create({
       data: {
-        userId: user.id,
+        userId: user.user.id,
         clinicId: clinic.id,
         role: 'ADMIN'
       }
     });
     console.log('🔗 Admin linked to clinic via ClinicMember.');
 
-    // 6️⃣ TEST SIGN-IN
-    console.log('🧪 Testing sign-in...');
-    const signInResult = await auth.api.createUser({
-      body: {
-        email: adminEmail,
-        password: adminPassword,
-        name: adminName,
-        data: {
-          role: 'ADMIN',
-          isAdmin: true
-        }
-      }
-    });
-
-    console.log('✅ Sign-in test successful for:', signInResult.user.email);
+    console.log('\n✅ SEEDING COMPLETED SUCCESSFULLY!');
+    console.log('📧 Email:', adminEmail);
+    console.log('🔑 Password:', adminPassword);
+    console.log('🏥 Clinic:', clinicName);
   } catch (err) {
-    console.error('❌ Error during seeding:', err);
+    console.error('❌ Error during seeding:', err instanceof Error ? err.message : err);
+    console.error('Full error:', err);
+    await prisma.$disconnect();
     process.exit(1);
   } finally {
     await prisma.$disconnect();
-    console.log('👋 Seed script completed.');
     process.exit(0);
   }
 }

@@ -34,21 +34,21 @@ export const appointmentRouter = createTRPCRouter({
   // ==================== QUERIES (READ) ====================
 
   getById: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input, ctx }) => {
-    return appointmentService.getAppointmentById(input.id, ctx.session.user.clinic?.id ?? '');
+    return appointmentService.getAppointmentById(input.id, ctx.session.user?.clinic?.id ?? '');
   }),
 
   list: protectedProcedure.input(AppointmentFilterSchema).query(async ({ input, ctx }) => {
-    return appointmentService.getAppointments(ctx.session.user.clinic?.id ?? '', input);
+    return appointmentService.getAppointments(ctx.session.user?.clinic?.id ?? '', input);
   }),
 
   today: protectedProcedure.query(async ({ ctx }) => {
-    return appointmentService.getTodayAppointments(ctx.session.user.clinic?.id ?? '');
+    return appointmentService.getTodayAppointments(ctx.session.user?.clinic?.id ?? '');
   }),
 
   stats: protectedProcedure
     .input(z.object({ period: z.enum(['day', 'week', 'month']).optional() }))
     .query(async ({ ctx }) => {
-      return appointmentService.getAppointmentStats(ctx.session.user.clinic?.id ?? '');
+      return appointmentService.getAppointmentStats(ctx.session.user?.clinic?.id ?? '');
     }),
 
   availableSlots: protectedProcedure
@@ -60,7 +60,7 @@ export const appointmentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      return appointmentService.getAvailableTimes(ctx.session.user.clinic?.id ?? '', input.date);
+      return appointmentService.getAvailableTimes(ctx.session.user?.clinic?.id ?? '', input.date);
     }),
 
   // ==================== MUTATIONS ====================
@@ -70,7 +70,7 @@ export const appointmentRouter = createTRPCRouter({
   }),
 
   update: protectedProcedure.input(UpdateAppointmentSchema).mutation(async ({ input, ctx }) => {
-    return appointmentService.updateAppointment(input as UpdateAppointmentInput, ctx.session.user.clinic?.id ?? '');
+    return appointmentService.updateAppointment(input as UpdateAppointmentInput, ctx.session.user?.clinic?.id ?? '');
   }),
 
   cancel: protectedProcedure
@@ -85,7 +85,7 @@ export const appointmentRouter = createTRPCRouter({
     }),
 
   checkIn: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input, ctx }) => {
-    return appointmentService.checkInPatient(input.id, ctx.session.user.id, ctx.session.user.clinic?.id ?? '');
+    return appointmentService.checkInPatient(input.id, ctx.session.user.id, ctx.session.user?.clinic?.id ?? '');
   }),
 
   complete: protectedProcedure
@@ -99,7 +99,7 @@ export const appointmentRouter = createTRPCRouter({
       return appointmentService.completeAppointment(
         input.id,
         ctx.session.user.id,
-        ctx.session.user.clinic?.id ?? '',
+        ctx.session.user?.clinic?.id ?? '',
         input.notes
       );
     }),
@@ -109,7 +109,7 @@ export const appointmentRouter = createTRPCRouter({
    * Service handles caching internally
    */
   // getById: protectedProcedure.input(AppointmentByIdSchema).query(async ({ ctx, input }) => {
-  //   const clinicId = ctx.session?.user.clinic?.id;
+  //   const clinicId = ctx.session?.user?.clinic?.id;
   //   if (!clinicId) {
   //     throw new TRPCError({
   //       code: 'UNAUTHORIZED',
@@ -133,7 +133,7 @@ export const appointmentRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getToday: protectedProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
@@ -257,7 +257,7 @@ export const appointmentRouter = createTRPCRouter({
    */
   // create: protectedProcedure.input(AppointmentCreateSchema).mutation(async ({ ctx, input }) => {
   //   try {
-  //     const clinicId = ctx.session?.user.clinic?.id;
+  //     const clinicId = ctx.session?.user?.clinic?.id;
   //     if (!clinicId) {
   //       throw new TRPCError({
   //         code: 'UNAUTHORIZED',
@@ -287,7 +287,7 @@ export const appointmentRouter = createTRPCRouter({
   //  */
   // update: protectedProcedure.input(AppointmentUpdateSchema).mutation(async ({ ctx, input }) => {
   //   try {
-  //     const clinicId = ctx.session?.user.clinic?.id;
+  //     const clinicId = ctx.session?.user?.clinic?.id;
   //     if (!clinicId) {
   //       throw new TRPCError({
   //         code: 'UNAUTHORIZED',
@@ -317,7 +317,7 @@ export const appointmentRouter = createTRPCRouter({
    */
   updateStatus: protectedProcedure.input(AppointmentUpdateStatusSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -347,7 +347,7 @@ export const appointmentRouter = createTRPCRouter({
    */
   delete: protectedProcedure.input(AppointmentDeleteSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',

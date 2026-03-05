@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getSession } from '@/server/api/utils';
+import { getSession } from '@/lib/auth-server';
 import { patientService } from '@/server/db/services';
 
 import { PatientDetailClient } from '../_components/patient-detail-client';

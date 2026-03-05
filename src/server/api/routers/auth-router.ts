@@ -1,10 +1,9 @@
-import { userSchema } from 'better-auth';
 import z from 'zod';
 
-import { resetPasswordFormSchema, signupFormSchema } from '../../../zodSchemas';
+import { createServerRoleChecker, getRole } from '../../../lib/auth-server';
+import { resetPasswordFormSchema, signupFormSchema, userSchema } from '../../../zodSchemas';
 import { auth } from '../../auth';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '..';
-import { createServerRoleChecker, getRole } from '../utils';
 
 export const authRouter = createTRPCRouter({
   // signUp: publicProcedure.input(signupFormSchema).mutation(async ({ input: values }) => {
@@ -42,8 +41,16 @@ export const authRouter = createTRPCRouter({
     // Get session from headers
     const session = ctx.session;
 
+    if (!session) {
+      return {
+        role: null,
+        user: null,
+        permissions: null
+      };
+    }
+
     return {
-      role: getRole(session).toString(),
+      role: getRole(session),
       user: session?.user,
       permissions: await createServerRoleChecker(auth)(session)
     };
@@ -69,6 +76,11 @@ export const authRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
     const session = ctx.session;
     const user = ctx.user;
+
+    if (!session) {
+      throw new Error('No session found');
+    }
+
     return {
       ...session?.user,
       permissions: await createServerRoleChecker(auth)(session),

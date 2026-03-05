@@ -18,7 +18,8 @@ import type { PrismaClient } from '@/prisma/client';
 import type { Prisma } from '@/prisma/types';
 import { CACHE_KEYS, CACHE_TTL } from '@/server/redis/cache-keys';
 
-import { prisma, ValidationError } from '..';
+import { ValidationError } from '..';
+import prisma from '../client';
 import { AppError, ConflictError, NotFoundError } from '../error';
 import * as patientRepo from '../repositories/patient.repo';
 import * as staffRepo from '../repositories/staff.repo';

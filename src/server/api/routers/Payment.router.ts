@@ -35,7 +35,7 @@ export const paymentsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -77,7 +77,7 @@ export const paymentsRouter = createTRPCRouter({
    */
   addDiagnosis: protectedProcedure.input(AddDiagnosisInputSchema).mutation(async ({ input, ctx }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       // const _userId = ctx.user.id;
 
       if (!clinicId) {
@@ -129,7 +129,7 @@ export const paymentsRouter = createTRPCRouter({
    */
   addNewBill: protectedProcedure.input(AddNewBillInputSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -159,7 +159,7 @@ export const paymentsRouter = createTRPCRouter({
    */
   generateBill: protectedProcedure.input(PaymentSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',

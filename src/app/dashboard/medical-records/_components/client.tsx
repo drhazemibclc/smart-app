@@ -1,6 +1,5 @@
 'use client';
 
-import type { Decimal } from '@prisma/client/runtime/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Calendar, Edit, Eye, FileText, Heart, Plus, Search, Thermometer, Trash2, User } from 'lucide-react';
@@ -26,7 +25,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { MedicalRecords } from '@/server/db/types';
 import { trpc } from '@/utils/trpc';
 
-import type { AccessLevel, Gender } from '../../../../generated/prisma/enums';
 import { AddMedicalRecordModal } from './add-medical-record-modal';
 import { MedicalRecordDetails } from './medical-record-details';
 import { MedicalRecordFilters } from './medical-record-filters';
@@ -109,62 +107,8 @@ export function MedicalRecordsClient({ patients, doctors, clinicId, userId }: Me
     }
   };
 
-  const handleViewDetails = (
-    record: {
-      doctor: { id: string; name: string; specialty: string } | null;
-      patient: {
-        id: string;
-        image: string | null;
-        colorCode: string | null;
-        firstName: string;
-        lastName: string;
-        dateOfBirth: Date;
-        gender: Gender;
-      } | null;
-      growthRecords: {
-        createdAt: Date;
-        weight: number | null;
-        height: number | null;
-        headCircumference: Decimal | null;
-      }[];
-      encounter: { type: string | null; id: string; date: Date; diagnosis: string | null }[];
-      vitalSigns: {
-        recordedAt: Date;
-        bodyTemperature: number | null;
-        systolic: number | null;
-        diastolic: number | null;
-        heartRate: number | null;
-        respiratoryRate: number | null;
-        oxygenSaturation: number | null;
-      }[];
-    } & {
-      clinicId: string;
-      id: string;
-      createdAt: Date;
-      updatedAt: Date;
-      deletedAt: Date | null;
-      isDeleted: boolean | null;
-      patientId: string;
-      doctorId: string | null;
-      diagnosis: string | null;
-      notes: string | null;
-      symptoms: string | null;
-      appointmentId: string;
-      treatmentPlan: string | null;
-      labRequest: string | null;
-      attachments: string | null;
-      followUpDate: Date | null;
-      subjective: string | null;
-      objective: string | null;
-      assessment: string | null;
-      plan: string | null;
-      isConfidential: boolean;
-      accessLevel: AccessLevel;
-      lastAccessedAt: Date | null;
-      lastAccessedBy: string | null;
-    }
-  ) => {
-    setSelectedRecord(record as MedicalRecords);
+  const handleViewDetails = (record: MedicalRecords) => {
+    setSelectedRecord(record);
     setIsDetailsModalOpen(true);
   };
 
@@ -380,22 +324,22 @@ export function MedicalRecordsClient({ patients, doctors, clinicId, userId }: Me
                           <TableCell>
                             {record.vitalSigns && (
                               <div className='flex items-center gap-2 text-sm'>
-                                {record.vitalSigns[0].bodyTemperature && (
+                                {record.vitalSigns?.bodyTemperature && (
                                   <div
                                     className='flex items-center'
                                     title='Temperature'
                                   >
                                     <Thermometer className='h-3 w-3 text-red-500' />
-                                    <span className='ml-1'>{record.vitalSigns[0].bodyTemperature}°C</span>
+                                    <span className='ml-1'>{record.vitalSigns?.bodyTemperature}°C</span>
                                   </div>
                                 )}
-                                {record.vitalSigns[0].heartRate && (
+                                {record.vitalSigns?.heartRate && (
                                   <div
                                     className='flex items-center'
                                     title='Heart Rate'
                                   >
                                     <Heart className='h-3 w-3 text-red-500' />
-                                    <span className='ml-1'>{record.vitalSigns[0].heartRate}</span>
+                                    <span className='ml-1'>{record.vitalSigns?.heartRate}</span>
                                   </div>
                                 )}
                               </div>
@@ -417,7 +361,9 @@ export function MedicalRecordsClient({ patients, doctors, clinicId, userId }: Me
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align='end'>
-                                <DropdownMenuItem onClick={() => handleViewDetails(record)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleViewDetails(record as unknown as MedicalRecords)}
+                                >
                                   <Eye className='mr-2 h-4 w-4' />
                                   View Details
                                 </DropdownMenuItem>

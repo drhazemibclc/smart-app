@@ -14,7 +14,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSession } from '@/server/api/utils/index';
+import { getSession } from '@/lib/auth-server';
 
 import { visitService } from '../server/db/services';
 import type { AppointmentStatus } from '../server/db/types';
@@ -33,9 +33,9 @@ export async function createVisitAction(input: unknown) {
   const result = await visitService.createVisit(
     {
       ...validated,
-      clinicId: validated.clinicId ?? session.user.clinic?.id ?? ''
+      clinicId: validated.clinicId ?? session.user?.clinic?.id ?? ''
     },
-    session.user.clinic?.id ?? ''
+    session.user?.clinic?.id ?? ''
   );
 
   revalidatePath(`/dashboard/patients/${validated.patientId}`);

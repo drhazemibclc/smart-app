@@ -13,9 +13,9 @@ export default async function NewAppointmentPage() {
   if (!session?.user) redirect('/login');
 
   // Prefetch necessary data
-  void prefetch(trpc.doctor.list.queryOptions({ clinicId: session.user.clinic?.id }));
-  void prefetch(trpc.patient.list.queryOptions({ clinicId: session.user.clinic?.id, limit: 100 }));
-  void prefetch(trpc.service.list.queryOptions({ clinicId: session.user.clinic?.id }));
+  void prefetch(trpc.doctor.list.queryOptions({ clinicId: session.user?.clinic?.id }));
+  void prefetch(trpc.patient.list.queryOptions({ clinicId: session.user?.clinic?.id, limit: 100 }));
+  void prefetch(trpc.service.list.queryOptions({ clinicId: session.user?.clinic?.id }));
 
   return (
     <HydrateClient>

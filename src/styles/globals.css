@@ -1,11 +1,9 @@
-@import url("tailwindcss");
-@import url("tw-animate-css");
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @plugin "tailwind-scrollbar" {
   preferredstrategy: "pseudoelements";
 }
-
-@source "../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 

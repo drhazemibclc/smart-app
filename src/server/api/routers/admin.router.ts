@@ -10,7 +10,7 @@ export const adminRouter = createTRPCRouter({
   // ==================== QUERIES (READ) ====================
 
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Clinic ID not found' });
 
     try {
@@ -23,14 +23,14 @@ export const adminRouter = createTRPCRouter({
   }),
 
   getClinicCounts: adminProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
     return await clinicService.countUserClinics(clinicId);
   }),
 
   getServices: adminProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
     return await adminService.getServices(clinicId);
@@ -41,21 +41,21 @@ export const adminRouter = createTRPCRouter({
   }),
 
   getStaffList: adminProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
     return await adminService.getStaffList(clinicId);
   }),
 
   getDoctorList: adminProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
     return await adminService.getDoctorList(clinicId);
   }),
 
   getTodaySchedule: adminProcedure.query(async ({ ctx }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
     return await doctorService.getTodaySchedule(clinicId);
@@ -71,7 +71,7 @@ export const adminRouter = createTRPCRouter({
   // (Mutations remain largely the same as they already called adminService)
 
   createNewStaff: adminProcedure.input(StaffAuthSchema).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session?.user.clinic?.id;
+    const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
     const result = await adminService.createStaff({ ...input, clinicId });

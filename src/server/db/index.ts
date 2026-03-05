@@ -1,9 +1,4 @@
-// src/index.ts
-
 export * from './client';
-// Client
-export { prisma } from './client';
-// Constants
 // Errors
 export { ApiError, ValidationError } from './error';
 // Repositories

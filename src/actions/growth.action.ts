@@ -15,7 +15,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { growthService } from '@/db/services/growth.service';
-import { getSession } from '@/server/api/utils/index';
+import { getSession } from '@/lib/auth-server';
 import {
   type CreateGrowthRecordInput,
   DeleteGrowthRecordSchema,

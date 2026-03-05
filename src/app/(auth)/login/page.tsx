@@ -25,20 +25,6 @@ export default function LoginPage() {
           <div className='absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#93C5FD_10px,#93C5FD_20px)] opacity-5' />
         </div>
 
-        {/* Branding */}
-        <div className='fade-in slide-in-from-top-4 relative z-10 flex w-full animate-in items-center gap-3 font-medium text-lg tracking-tight duration-700'>
-          <div className='flex items-center gap-2'>
-            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-cyan-500'>
-              <HeartPulse className='h-6 w-6 text-white' />
-            </div>
-            <div>
-              <span className='bg-linear-to-r from-blue-700 to-cyan-600 bg-clip-text font-bold text-transparent text-xl'>
-                Smart Clinic
-              </span>
-              <span className='block font-normal text-blue-600 text-xs'>Pediatrics</span>
-            </div>
-          </div>
-        </div>
 
         {/* Clinic Showcase */}
         <div className='relative z-10 my-auto flex max-w-125 flex-col gap-8'>

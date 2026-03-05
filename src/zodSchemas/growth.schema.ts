@@ -28,7 +28,38 @@ export const whoChartTypeSchema = z.enum(ChartType);
 //   );
 
 const growthStatusSchema = z.enum(GrowthStatus);
-
+export const GrowthRaw = z.object({
+  patientId: patientIdSchema,
+  clinicId: clinicIdSchema,
+  medicalId: idSchema.optional(),
+  vitalSignsId: idSchema.optional(),
+  encounterId: idSchema.optional(),
+  gender: genderSchema,
+  date: dateSchema.default(() => new Date()),
+  recordedAt: dateSchema.default(() => new Date()),
+  // Age information
+  ageDays: z.number().int().min(0).max(1825),
+  ageMonths: z.number().int().min(0).max(60),
+  ageYears: z.number().int().min(0).max(5),
+  // Measurements
+  weight: z.number().min(0.5).max(200), // kg
+  height: z.number().min(20).max(250), // cm
+  headCircumference: z.number().min(20).max(60).optional(), // cm (for infants < 2 years)
+  bmi: z.number().min(5).max(50).optional(),
+  // WHO standards
+  weightForAgeZ: z.number().min(-5).max(5).optional(),
+  heightForAgeZ: z.number().min(-5).max(5).optional(),
+  bmiForAgeZ: z.number().min(-5).max(5).optional(),
+  hcForAgeZ: z.number().min(-5).max(5).optional(),
+  // Classification
+  growthStatus: growthStatusSchema.default('NORMAL'),
+  percentile: z.number().min(0).max(100).optional(),
+  zScore: z.number().min(-5).max(5).optional(),
+  // Additional info
+  measurementType: measurementTypeSchema.default('Weight'),
+  notes: z.string().max(1000).optional(),
+  classification: z.string().max(100).optional()
+});
 // ==================== GROWTH RECORD SCHEMAS ====================
 export const GrowthRecordBaseSchema = z
   .object({
@@ -103,8 +134,8 @@ export const GrowthRecordBaseSchema = z
       path: ['weight']
     }
   );
-export const GrowthRecordCreateSchema = GrowthRecordBaseSchema.extend({
-  clinicId: clinicIdSchema.optional() // Required for create
+export const GrowthRecordCreateSchema = GrowthRaw.extend({
+  clinicId: clinicIdSchema.optional()
 });
 
 export type GrowthRecordCreateInput = z.infer<typeof GrowthRecordCreateSchema>;
@@ -346,17 +377,17 @@ export const percentileSchema = z
 
 // ==================== INPUT SCHEMAS ====================
 
-export const GrowthRecordUpdateSchema = z
-  .object({
-    id: idSchema,
-    weight: weightSchema.optional(),
-    height: heightSchema,
-    headCircumference: headCircumferenceSchema,
-    bmi: bmiSchema,
-    notes: z.string().max(1000).optional(),
-    classification: z.string().optional()
-  })
-  .partial();
+export const GrowthRecordUpdateRaw = z.object({
+  id: idSchema,
+  weight: weightSchema.optional(),
+  height: heightSchema,
+  headCircumference: headCircumferenceSchema,
+  bmi: bmiSchema,
+  notes: z.string().max(1000).optional(),
+  classification: z.string().optional()
+});
+
+export const GrowthRecordUpdateSchema = GrowthRecordUpdateRaw.partial();
 
 export const DeleteGrowthRecordSchema = z.object({
   id: idSchema,

@@ -1,56 +1,61 @@
 // apps/web/src/trpc/server.tsx
+/** biome-ignore-all lint/suspicious/noExplicitAny: <ok> */
 import 'server-only';
 
 import type { DefaultError, FetchQueryOptions, InfiniteData, QueryKey } from '@tanstack/react-query';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import { headers } from 'next/headers';
-import type { NextRequest } from 'next/server';
+import { createTRPCOptionsProxy, type TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { cache } from 'react';
 
 import { createCallerFactory } from '@/server/api';
 import { createTRPCContext } from '@/server/api/context';
-import { type AppRouter, appRouter } from '@/server/api/routers/index';
+import { appRouter } from '@/server/api/routers/index';
 
 import { makeQueryClient } from './query-client';
 
 export const getQueryClient = cache(() => makeQueryClient());
 
 const createServerContext = cache(async () => {
-  const heads = await headers();
-
-  return createTRPCContext({
-    headers: heads
-  } as unknown as NextRequest);
+  return createTRPCContext();
 });
 
 // Server-side tRPC client
-export const trpc = createTRPCOptionsProxy<AppRouter>({
+export const trpc = createTRPCOptionsProxy({
+  ctx: createTRPCContext,
   router: appRouter,
-  ctx: await createServerContext(),
   queryClient: getQueryClient
 });
+
+export const caller = appRouter.createCaller(createTRPCContext);
 
 export const createCaller = cache(async () => {
   const ctx = await createServerContext();
   return createCallerFactory(appRouter)(ctx);
 });
-export async function prefetch<
-  TQueryFnData = unknown,
-  TError = DefaultError,
-  TData = TQueryFnData,
-  TQueryKey extends QueryKey = QueryKey
->(queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>): Promise<void> {
-  const queryClient = getQueryClient();
+// export async function prefetch<
+//   TQueryFnData = unknown,
+//   TError = DefaultError,
+//   TData = TQueryFnData,
+//   TQueryKey extends QueryKey = QueryKey
+// >(queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>): Promise<void> {
+//   const queryClient = getQueryClient();
 
-  try {
-    await queryClient.prefetchQuery(queryOptions);
-  } catch (error) {
-    // Log but don't throw - prefetch errors shouldn't break the page
-    console.error('Error prefetching:', error);
+//   try {
+//     await queryClient.prefetchQuery(queryOptions);
+//   } catch (error) {
+//     // Log but don't throw - prefetch errors shouldn't break the page
+//     console.error('Error prefetching:', error);
+//   }
+// }
+
+export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
+  const queryClient = getQueryClient();
+  if (queryOptions.queryKey[1]?.type === 'infinite') {
+    void queryClient.prefetchInfiniteQuery(queryOptions as any);
+  } else {
+    void queryClient.prefetchQuery(queryOptions);
   }
 }
-
 /**
  * Separate function for infinite queries
  * Uses InfiniteData to correctly type the pages and pageParams
@@ -75,10 +80,7 @@ export async function prefetchInfinite<
 }
 
 // HydrateClient component
-export function HydrateClient({ children }: { children: React.ReactNode }) {
+export function HydrateClient(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
-  // No changes needed here, dehydrate(queryClient) returns DehydratedState automatically
-  const dehydratedState = dehydrate(queryClient);
-
-  return <HydrationBoundary state={dehydratedState}>{children}</HydrationBoundary>;
+  return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>;
 }

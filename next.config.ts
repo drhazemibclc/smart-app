@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -24,31 +25,100 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384]
   },
 
-  // poweredByHeader: false,
+  poweredByHeader: false,
   reactStrictMode: true,
 
   typescript: {
-    ignoreBuildErrors: false // Should be false in production for type safety
+    ignoreBuildErrors: false
   },
 
-  reactCompiler: true
+  // React Compiler for automatic optimization
+  reactCompiler: true,
 
-  // // Turbopack configuration
-  // turbopack: {
-  //   // Root should point to project root, not parent directory
-  //   root: __dirname,
-  //   rules: {
-  //     '*.svg': {
-  //       loaders: ['@svgr/webpack'],
-  //       as: '*.js'
-  //     }
-  //   },
-  //   resolveAlias: {
-  //     underscore: 'lodash'
-  //   },
-  //   resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
-  //   debugIds: process.env.NODE_ENV === 'development' // Only enable in development
-  // }
+  logging: {
+    fetches: {
+      fullUrl: true // Shows complete URLs for fetch requests in terminal
+    }
+  },
+
+  // Redirects - removed automatic redirect to dashboard to allow homepage access
+  async redirects() {
+    return [];
+  },
+
+  // Security Headers
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          }
+        ]
+      }
+    ];
+  },
+  cacheLife: {
+    default: {
+      stale: 3600, // 1 hour stale-while-revalidate
+      revalidate: 7200, // 2 hours background revalidation
+      expire: 86400 // 24 hours max age
+    },
+    hours: {
+      stale: 3600,
+      revalidate: 7200,
+      expire: 86400
+    },
+    days: {
+      stale: 86400,
+      revalidate: 172800,
+      expire: 604800 // 7 days
+    },
+    weeks: {
+      stale: 604800,
+      revalidate: 1209600,
+      expire: 2592000 // 30 days
+    },
+    max: {
+      stale: 2592000, // 30 days
+      revalidate: 5184000,
+      expire: 31536000 // 365 days
+    }
+  },
+  // Experimental features
+  experimental: {
+    // View Transitions API
+    viewTransition: true,
+    optimizePackageImports: [
+      'lucide-react', // Optimize icon imports
+      '@radix-ui/react-dialog', // Optimize component libraries
+      '@radix-ui/react-dropdown-menu',
+      'date-fns' // Optimize date utilities
+    ],
+    serverComponentsHmrCache: true
+
+    // Cache life profiles for use cache directive
+  }
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: 'health-factory',
+  project: 'clinic-nextjs',
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  tunnelRoute: '/monitoring'
+});

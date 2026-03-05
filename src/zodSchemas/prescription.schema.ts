@@ -149,41 +149,21 @@ const durationSchema = z
   .regex(/^\d+ (days?|weeks?|months?)$/, 'Invalid duration format. Use formats like "7 days", "2 weeks", "3 months"');
 
 // ==================== PRESCRIBED ITEM SCHEMAS ====================
-export const PrescribedItemBaseSchema = z
-  .object({
-    prescriptionId: idSchema,
-    drugId: idSchema,
-    dosageValue: dosageValueSchema,
-    dosageUnit: dosageUnitSchema,
-    frequency: frequencySchema,
-    duration: durationSchema,
-    instructions: z.string().max(1000, 'Instructions must be less than 1000 characters').optional(),
-    drugRoute: drugRouteSchema.optional(),
-    strength: z.string().max(50).optional(), // e.g., "500mg", "10mg/ml"
-    quantity: z.number().min(1).max(1000).optional(), // Total quantity to dispense
-    refills: z.number().int().min(0).max(12).optional(), // Number of refills allowed
-    prn: z.boolean().default(false), // As needed (pro re nata)
-    isActive: z.boolean().default(true)
-  })
-  .refine(
-    data => {
-      // Validate dosage based on unit
-      if (data.dosageUnit === 'MG' && data.dosageValue > 1000) {
-        return false;
-      }
-      if (data.dosageUnit === 'ML' && data.dosageValue > 100) {
-        return false;
-      }
-      if (data.dosageUnit === 'TABLET' && data.dosageValue > 20) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'Dosage value exceeds maximum for specified unit',
-      path: ['dosageValue']
-    }
-  );
+export const PrescribedItemBaseSchema = z.object({
+  prescriptionId: idSchema,
+  drugId: idSchema,
+  dosageValue: dosageValueSchema,
+  dosageUnit: dosageUnitSchema,
+  frequency: frequencySchema,
+  duration: durationSchema,
+  instructions: z.string().max(1000, 'Instructions must be less than 1000 characters').optional(),
+  drugRoute: drugRouteSchema.optional(),
+  strength: z.string().max(50).optional(), // e.g., "500mg", "10mg/ml"
+  quantity: z.number().min(1).max(1000).optional(), // Total quantity to dispense
+  refills: z.number().int().min(0).max(12).optional(), // Number of refills allowed
+  prn: z.boolean().default(false), // As needed (pro re nata)
+  isActive: z.boolean().default(true)
+});
 
 export const PrescribedItemCreateSchema = PrescribedItemBaseSchema;
 
@@ -192,26 +172,29 @@ export const PrescribedItemUpdateSchema = PrescribedItemBaseSchema.partial().ext
 });
 
 // ==================== PRESCRIPTION SCHEMAS ====================
-export const PrescriptionBaseSchema = z
-  .object({
-    medicalRecordId: idSchema,
-    doctorId: doctorIdSchema,
-    patientId: patientIdSchema,
-    encounterId: idSchema,
-    clinicId: clinicIdSchema,
-    medicationName: medicationNameSchema.optional(), // Legacy field for free-text entry
-    instructions: z.string().max(2000, 'Instructions must be less than 2000 characters').optional(),
-    issuedDate: dateSchema.default(() => new Date()),
-    endDate: dateSchema.optional(),
-    status: z.enum(['ACTIVE', 'COMPLETED', 'CANCELLED', 'ON_HOLD']).default('ACTIVE'),
-    isChronic: z.boolean().default(false),
-    requiresPriorAuthorization: z.boolean().default(false),
-    priorAuthorizationCode: z.string().max(50).optional(),
-    pharmacyNotes: z.string().max(500).optional(),
-    prescribedItems: z
-      .array(PrescribedItemBaseSchema.omit({ prescriptionId: true }))
-      .min(1, 'At least one prescribed item is required')
-  })
+export const PrescriptionBaseSchema = z.object({
+  medicalRecordId: idSchema,
+  doctorId: doctorIdSchema,
+  patientId: patientIdSchema,
+  encounterId: idSchema,
+  clinicId: clinicIdSchema,
+  medicationName: medicationNameSchema.optional(), // Legacy field for free-text entry
+  instructions: z.string().max(2000, 'Instructions must be less than 2000 characters').optional(),
+  issuedDate: dateSchema.default(() => new Date()),
+  endDate: dateSchema.optional(),
+  status: z.enum(['ACTIVE', 'COMPLETED', 'CANCELLED', 'ON_HOLD']).default('ACTIVE'),
+  isChronic: z.boolean().default(false),
+  requiresPriorAuthorization: z.boolean().default(false),
+  priorAuthorizationCode: z.string().max(50).optional(),
+  pharmacyNotes: z.string().max(500).optional(),
+  prescribedItems: z
+    .array(PrescribedItemBaseSchema.omit({ prescriptionId: true }))
+    .min(1, 'At least one prescribed item is required')
+});
+
+export const PrescriptionCreateSchema = PrescriptionBaseSchema.extend({
+  clinicId: clinicIdSchema // Required for create
+})
   .refine(
     data => {
       // Validate end date is after issue date
@@ -238,10 +221,6 @@ export const PrescriptionBaseSchema = z
       path: ['priorAuthorizationCode']
     }
   );
-
-export const PrescriptionCreateSchema = PrescriptionBaseSchema.extend({
-  clinicId: clinicIdSchema // Required for create
-});
 
 export const PrescriptionUpdateSchema = PrescriptionBaseSchema.partial().extend({
   id: idSchema

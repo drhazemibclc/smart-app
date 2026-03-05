@@ -1,30 +1,29 @@
 'use client';
 
-import type { ThemeProviderProps } from 'next-themes';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import type { FC, ReactNode } from 'react';
+import type * as React from 'react';
 
-const EStorageKeys = {
-  theme: 'SMART-CLINIC-APP-THEME'
-};
+type NextThemesProps = React.ComponentProps<typeof NextThemesProvider>;
 
-// upstream props omit `children`, so add it locally for usage here
-type Props = ThemeProviderProps & { children?: ReactNode };
-
-// cast the imported provider to a variant that allows children
-const NextThemesProviderTyped = NextThemesProvider as FC<Props>;
-
-export default function ThemeProvider({ children, ...properties }: Props) {
+export function ThemeProvider({
+  children,
+  attribute = 'class',
+  defaultTheme = 'system',
+  enableSystem = true
+}: {
+  children: React.ReactNode;
+  attribute?: NextThemesProps['attribute'];
+  defaultTheme?: string;
+  enableSystem?: boolean;
+}) {
   return (
-    <NextThemesProviderTyped
-      attribute='class'
-      defaultTheme='system'
-      disableTransitionOnChange={false}
-      enableSystem
-      storageKey={EStorageKeys.theme}
-      {...properties}
+    <NextThemesProvider
+      attribute={attribute}
+      defaultTheme={defaultTheme}
+      disableTransitionOnChange
+      enableSystem={enableSystem}
     >
       {children}
-    </NextThemesProviderTyped>
+    </NextThemesProvider>
   );
 }

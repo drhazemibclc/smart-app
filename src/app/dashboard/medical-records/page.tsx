@@ -12,7 +12,7 @@ export default async function MedicalRecordsPage() {
     redirect('/login');
   }
 
-  const clinicId = session.user.clinic?.id;
+  const clinicId = session.user?.clinic?.id;
 
   if (!clinicId) {
     redirect('/dashboard');

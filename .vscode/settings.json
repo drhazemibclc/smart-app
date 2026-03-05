@@ -37,7 +37,7 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   // Biome as linter
   "biome.lsp.bin": "node_modules/@biomejs/biome/bin/biome",
@@ -272,7 +272,7 @@
   "window.newWindowDimensions": "maximized",
   "window.restoreWindows": "all",
   "window.title": "${dirty}${activeEditorShort}${separator}${rootName}${separator}${profileName}",
-  "workbench.colorTheme": "Default Dark+",
+  "workbench.colorTheme": "Default Light Modern",
   "workbench.editor.closeOnFileDelete": true,
   "workbench.editor.enablePreview": true,
   "workbench.editor.enablePreviewFromQuickOpen": false,

@@ -16,39 +16,37 @@ const nameSchema = z
   .regex(/^[a-zA-Z\s\-']+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes');
 
 // ==================== BASE SCHEMAS ====================
-export const patientBaseSchema = z
-  .object({
-    firstName: nameSchema,
-    lastName: nameSchema,
-    dateOfBirth: z.date().refine(date => date <= new Date(), {
-      message: 'Date of birth cannot be in future'
-    }),
-    gender: genderSchema,
-    phone: phoneNumberSchema.nullable(),
-    email: emailSchema.nullable(),
-    address: z.string().max(500, 'Address must be less than 500 characters').optional().nullable(),
-    image: z.string().url('Invalid image URL').optional().nullable(),
-    colorCode: z
-      .string()
-      .regex(/^#([0-9A-F]{3}){1,2}$/i, 'Invalid hex color format')
-      .optional()
-      .nullable(),
-    bloodGroup: bloodGroupSchema.nullable(),
-    allergies: z.string().max(2000, 'Allergies must be less than 2000 characters').optional().nullable(),
-    medicalConditions: z
-      .string()
-      .max(2000, 'Medical conditions must be less than 2000 characters')
-      .optional()
-      .nullable(),
-    relation: z.string().max(100, 'Relation must be less than 100 characters').optional().nullable(),
+export const patientBaseSchema = z.object({
+  firstName: nameSchema,
+  lastName: nameSchema,
+  dateOfBirth: z.date().refine(date => date <= new Date(), {
+    message: 'Date of birth cannot be in future'
+  }),
+  gender: genderSchema,
+  phone: phoneNumberSchema.nullable(),
+  email: emailSchema.nullable(),
+  address: z.string().max(500, 'Address must be less than 500 characters').optional().nullable(),
+  image: z.string().url('Invalid image URL').optional().nullable(),
+  colorCode: z
+    .string()
+    .regex(/^#([0-9A-F]{3}){1,2}$/i, 'Invalid hex color format')
+    .optional()
+    .nullable(),
+  bloodGroup: bloodGroupSchema.nullable(),
+  allergies: z.string().max(2000, 'Allergies must be less than 2000 characters').optional().nullable(),
+  medicalConditions: z.string().max(2000, 'Medical conditions must be less than 2000 characters').optional().nullable(),
+  relation: z.string().max(100, 'Relation must be less than 100 characters').optional().nullable(),
 
-    medicalHistory: z.string().max(5000, 'Medical history must be less than 5000 characters').optional().nullable(),
-    nutritionalStatus: z.string().max(100, 'Nutritional status must be less than 100 characters').optional().nullable(),
-    emergencyContactName: nameSchema.optional().nullable(),
-    emergencyContactNumber: phoneNumberSchema.nullable(),
-    maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']).optional().nullable(),
-    status: statusSchema.default('ACTIVE')
-  })
+  medicalHistory: z.string().max(5000, 'Medical history must be less than 5000 characters').optional().nullable(),
+  nutritionalStatus: z.string().max(100, 'Nutritional status must be less than 100 characters').optional().nullable(),
+  emergencyContactName: nameSchema.optional().nullable(),
+  emergencyContactNumber: phoneNumberSchema.nullable(),
+  maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED']).optional().nullable(),
+  status: statusSchema.default('ACTIVE')
+});
+
+// ==================== CREATE SCHEMA ====================
+export const CreatePatientSchema = patientBaseSchema
   .refine(
     data => {
       // If emergency contact name is provided, phone should also be provided
@@ -65,10 +63,7 @@ export const patientBaseSchema = z
       message: 'Emergency contact name and phone must both be provided if either is specified',
       path: ['emergencyContactNumber']
     }
-  );
-
-// ==================== CREATE SCHEMA ====================
-export const CreatePatientSchema = patientBaseSchema
+  )
   .extend({
     clinicId: z.uuid().optional() // Will be set from session
   })

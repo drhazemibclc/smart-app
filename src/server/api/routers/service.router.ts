@@ -45,7 +45,7 @@ export const serviceRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = input?.clinicId || ctx.session?.user.clinic?.id;
+        const clinicId = input?.clinicId || ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           return [];
         }
@@ -75,7 +75,7 @@ export const serviceRouter = createTRPCRouter({
    */
   getById: protectedProcedure.input(serviceIdSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -115,7 +115,7 @@ export const serviceRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = input.clinicId || ctx.session?.user.clinic?.id;
+        const clinicId = input.clinicId || ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -157,7 +157,7 @@ export const serviceRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = input.clinicId || ctx.session?.user.clinic?.id;
+        const clinicId = input.clinicId || ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -192,7 +192,7 @@ export const serviceRouter = createTRPCRouter({
    */
   getWithFilters: protectedProcedure.input(ServiceFilterSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -234,7 +234,7 @@ export const serviceRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = input.clinicId || ctx.session?.user.clinic?.id;
+        const clinicId = input.clinicId || ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -268,7 +268,7 @@ export const serviceRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = input.clinicId || ctx.session?.user.clinic?.id;
+        const clinicId = input.clinicId || ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -317,7 +317,7 @@ export const serviceRouter = createTRPCRouter({
    */
   create: protectedProcedure.input(ServiceCreateSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       // const userId = ctx.user.id;
 
       if (!clinicId) {
@@ -358,7 +358,7 @@ export const serviceRouter = createTRPCRouter({
    */
   update: protectedProcedure.input(updateServiceSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -397,7 +397,7 @@ export const serviceRouter = createTRPCRouter({
    */
   delete: protectedProcedure.input(serviceDeleteSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -436,7 +436,7 @@ export const serviceRouter = createTRPCRouter({
    */
   restore: protectedProcedure.input(serviceIdSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -469,7 +469,7 @@ export const serviceRouter = createTRPCRouter({
    */
   permanentlyDelete: protectedProcedure.input(serviceIdSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -515,7 +515,7 @@ export const serviceRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',

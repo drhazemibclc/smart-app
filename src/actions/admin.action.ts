@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache'; // ✅ For UI revalidation
 
+import { getSession } from '@/lib/auth-server';
 import { cacheHelpers } from '@/lib/cache/utils/helpers';
-import { getSession } from '@/server/api/utils/index';
 
 import { toNumber } from '../lib/decimal';
 import { adminService } from '../server/db/services';

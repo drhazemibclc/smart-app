@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSession } from '@/server/api/utils/index';
+import { getSession } from '@/lib/auth-server';
 
 import { appointmentService } from '../server/db/services';
 import { AppointmentCreateSchema, AppointmentDeleteSchema, AppointmentUpdateStatusSchema } from '../zodSchemas';

@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getSession } from '@/server/api/utils';
+import { getSession } from '@/lib/auth-server';
 import { patientService } from '@/server/db/services';
 
 import type { Gender } from '../../../../../generated/prisma/enums';

@@ -59,10 +59,13 @@ export const SignUpDoctorSchema = z
 
 // Schema for updating a user's profile.
 // .partial() makes all fields optional.
-export const UpdateUserProfileSchema = UserSchema.pick({
-  name: true,
-  image: true
-}).partial();
+export const UpdateUserProfileSchema = z
+  .object({
+    name: UserSchema.shape.name.optional(),
+    email: UserSchema.shape.email.optional(),
+    image: UserSchema.shape.image.optional()
+  })
+  .partial();
 
 // ============================================================================
 // INFERRED TYPESCRIPT TYPES
@@ -131,46 +134,35 @@ export const userSchema = z.object({
   updatedAt: z.coerce.date()
 });
 
-export const editableUserProfileSchema = userSchema
-  .pick({
-    name: true,
-    email: true
-  })
-  .partial();
+export const editableUserProfileSchema = z.object({
+  name: userSchema.shape.name.optional(),
+  email: userSchema.shape.email.optional()
+});
 
 export type UserType = z.infer<typeof userSchema>;
+const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+  .regex(/[a-z]/, 'Password must contain a lowercase letter')
+  .regex(/[0-9]/, 'Password must contain a number');
 
-export const signupFormSchema = userSchema
-  .pick({
-    name: true,
-    email: true
-  })
-  .extend({
-    password: z
-      .string()
-      .min(8, { message: 'Password must be at least 8 characters' })
-      .regex(/[A-Z]/, {
-        message: 'Password must contain at least one uppercase letter'
-      })
-      .regex(/[a-z]/, {
-        message: 'Password must contain at least one lowercase letter'
-      })
-      .regex(/[0-9]/, {
-        message: 'Password must contain at least one number'
-      })
-  });
-
-export const signInFormSchema = signupFormSchema.omit({ name: true });
+export const signupFormSchema = z.object({
+  name: userSchema.shape.name,
+  email: userSchema.shape.email,
+  password: passwordSchema
+});
 
 export const newPasswordSchema = z
   .object({
-    password: signupFormSchema.shape.password,
-    confirmPassword: signupFormSchema.shape.password
+    password: passwordSchema,
+    confirmPassword: passwordSchema
   })
   .refine(data => data.password === data.confirmPassword, {
     path: ['confirmPassword'],
-    message: 'Passwords do not match.'
+    message: 'Passwords do not match'
   });
+export const signInFormSchema = signupFormSchema.omit({ name: true });
 
 export const resetPasswordFormSchema = newPasswordSchema.safeExtend({
   token: z.string()

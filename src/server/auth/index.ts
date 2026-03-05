@@ -1,12 +1,13 @@
-import { sendEmail } from '@better-auth/dash';
-import { APIError, betterAuth, generateId } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
+// import { sendEmail } from '@better-auth/dash';
+import { prismaAdapter } from '@better-auth/prisma-adapter';
+import { APIError, betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
-import { admin, customSession, twoFactor } from 'better-auth/plugins';
+import { admin, customSession } from 'better-auth/plugins';
 import 'dotenv/config';
 
 import { env } from '../../env/server';
-import { prisma } from '../db/client';
+import { generateId } from '../../lib/id';
+import prisma from '../db/client';
 import { ac, roles } from './roles';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,21 +16,11 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql'
   }),
-
   trustedOrigins: [env.CORS_ORIGIN],
   emailAndPassword: {
     enabled: true,
     async sendResetPassword({ user, url }) {
-      await sendEmail({
-        to: user.email,
-        subject: 'Reset your password',
-        template: 'reset-password',
-        variables: {
-          userEmail: user.email,
-          resetLink: url,
-          userName: user.name
-        }
-      });
+      console.log('Password reset email would be sent to:', user.email, url);
     }
   },
   experimental: { joins: true },
@@ -39,7 +30,7 @@ export const auth = betterAuth({
       generateId: () => generateId(),
       defaultFindManyLimit: 100
     },
-    useSecureCookies: false, // Good for local HTTP
+    useSecureCookies: false,
     cookiePrefix: 'auth',
     crossSubDomainCookies: {
       enabled: true,
@@ -65,8 +56,14 @@ export const auth = betterAuth({
         defaultValue: true
       },
       role: {
-        type: ['DOCTOR', 'PATIENT', 'ADMIN', 'STAFF'], // This is the        required: false,
+        type: ['ADMIN', 'DOCTOR', 'STAFF', 'PATIENT'],
+        required: false,
         defaultValue: 'DOCTOR',
+        input: false
+      },
+      clinicId: {
+        type: 'string',
+        required: false,
         input: false
       },
       phone: {
@@ -84,7 +81,6 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       beforeDelete: async user => {
-        // Query database for additional fields
         const fullUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { role: true, isAdmin: true }
@@ -102,12 +98,12 @@ export const auth = betterAuth({
     }
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // 1 day
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
     storeSessionInDatabase: true,
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60 // 5 minutes
+      maxAge: 5 * 60
     }
   },
   account: {
@@ -126,32 +122,28 @@ export const auth = betterAuth({
     enabled: true,
     window: 60,
     max: 100,
-    storage: 'memory', // Increased default for general API calls
+    storage: 'database',
+    modelName: 'rateLimit',
     customRules: {
-      // Allow frequent session checks (needed for client-side auth)
       '/get-session': {
         window: 60,
         max: 60
       },
-      // Rate limit for sign-in to prevent brute force and credential stuffing attacks
       '/login/email': {
-        window: 300, // 5 minutes
-        max: 5 // max 5 login attempts per 5 minutes
+        window: 300,
+        max: 5
       },
-      // Rate limit for user and provider signup to prevent spam and abuse
       '/sign-up/email': {
-        window: 300, // 5 minutes
-        max: 5 // max 5 signup attempts per 5 minutes
+        window: 300,
+        max: 5
       },
-      // Stricter rate limit for forgot password to prevent email enumeration and spam
       '/forget-password': {
-        window: 300, // 5 minutes
-        max: 3 // max 3 requests per 5 minutes
+        window: 300,
+        max: 3
       },
-      // Also limit reset password attempts
       '/reset-password': {
-        window: 300, // 5 minutes
-        max: 5 // max 5 attempts per 5 minutes
+        window: 300,
+        max: 5
       }
     }
   },
@@ -178,13 +170,13 @@ export const auth = betterAuth({
       }
     }
   },
-
   plugins: [
-    twoFactor(),
+    // twoFactor(),
     admin({
       ac,
       roles
     }),
+    // Temporarily disable custom session to isolate the issue
     customSession(async ({ user, session }) => {
       const dbUser = await prisma.user.findUnique({
         where: { id: user.id },
@@ -210,7 +202,7 @@ export const auth = betterAuth({
         ...session,
         user: {
           ...user,
-          role: dbUser?.role?.toLowerCase() ?? 'patient',
+          role: dbUser?.role ?? 'PATIENT',
           clinic: primaryClinic
             ? {
                 id: primaryClinic.userId,
@@ -226,4 +218,4 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 export type User = Session['user'] & { role: string };
-export type Role = Uppercase<User['role']>;
+export type Role = keyof typeof roles;

@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import type { NextRequest } from 'next/server';
+import { cache } from 'react';
 
 import { auth, type Session, type User } from '@/server/auth';
 
@@ -13,12 +13,11 @@ export type Context = {
   headers: Headers;
 };
 
-export async function createTRPCContext(req: NextRequest): Promise<Context> {
-  const session = (await auth.api.getSession({ headers: req.headers })) as Session | null;
+export const createTRPCContext = cache(async () => {
+  const session = (await auth.api.getSession({ headers: await headers() })) as Session | null;
 
   const user = (session?.user ?? null) as User | null;
-  const clinicId = (user?.clinic?.id as string | undefined) ?? undefined;
-
+  const clinicId = user?.clinic?.id;
   return {
     session,
     user,
@@ -26,6 +25,6 @@ export async function createTRPCContext(req: NextRequest): Promise<Context> {
     db: prisma,
     headers: (await headers()) as Headers
   };
-}
+});
 
 export type ContextType = ReturnType<typeof createTRPCContext>;

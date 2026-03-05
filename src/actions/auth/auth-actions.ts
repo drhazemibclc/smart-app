@@ -13,7 +13,7 @@ import { auth } from '@/server/auth';
 import { checkRateLimit, getClientIP, RATE_LIMITS } from '@/server/auth/rate-limit';
 import type { Role } from '@/types/auth';
 
-import { db, prisma } from '../../server/db';
+import { db, prisma } from '../../server/db/client';
 import type { ActionResponse } from '../../types/api';
 import { SignInSchema, SignUpDoctorSchema, SignUpUserSchema } from '../../zodSchemas';
 

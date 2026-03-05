@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getSession } from '@/server/api/utils';
+import { getSession } from '@/lib/auth-server';
 
 import { NewPatientForm } from '../_components/new-patient-form';
 

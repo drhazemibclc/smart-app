@@ -1,10 +1,13 @@
 import 'dotenv/config';
 
-import { prisma } from '@/db/client';
-
+import { prisma } from '../src/server/db';
 import baseSeed from './seed/seed';
 import drugSeed from './seed/seed-drugs';
 import wfaSeed from './seed/seed-wfa';
+
+// const prisma = new PrismaClient({
+//   accelerateUrl: process.env.DATABASE_URL ?? ''
+// }).$extends(withAccelerate());
 
 export type PrismaSeedClient = typeof prisma;
 

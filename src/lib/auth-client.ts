@@ -8,22 +8,21 @@ import { createAuthClient } from 'better-auth/react';
 import type { auth } from '@/server/auth';
 import { ac, roles, type UserRoles } from '@/server/auth/roles';
 
-// build the plugin separately so we can cast `ac`
+// Build the plugin separately with type assertion
 const adminPlugin = adminClient({
   ac: ac as unknown as AccessControl,
-  roles // This is crucial - pass your custom roles
+  roles
 });
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
 
   fetchOptions: {
     onError: ctx => {
-      const err = ctx.error;
-      console.error('❌ Auth error:', err);
+      console.error('❌ Auth error:', ctx.error);
 
-      // Only redirect if status is 401
-      if (err && typeof err === 'object' && 'status' in err && err.status === 401 && typeof window !== 'undefined') {
+      // Check if it's a 401 error
+      if (ctx.error?.status === 401 && typeof window !== 'undefined') {
         window.location.href = '/login';
       }
     },
@@ -72,18 +71,17 @@ export function useAuth() {
     isLoading: isPending,
     session: session ?? null,
     status,
-    role: session?.user.role,
+    role: session?.user?.role,
     user: session?.user ?? null
   };
 }
 
-// Permission checker utility
-export const createPermissionChecker = (client: typeof authClient) => ({
-  hasPermission: (permissions: Record<string, string[]>, role: UserRoles) => {
-    return client.admin.checkRolePermission({
-      permissions,
-      role: role.toLowerCase()
-    } as Parameters<typeof client.admin.checkRolePermission>[0]);
-  }
-});
+// Permission checker utility - use authClient.admin directly
+export const hasPermission = (permissions: Record<string, string[]>, role: UserRoles) => {
+  return authClient.admin.checkRolePermission({
+    permissions,
+    role: role
+  });
+};
+
 export type Session = typeof authClient.$Infer.Session;

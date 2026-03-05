@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSession } from '@/server/api/utils/index';
+import { getSession } from '@/lib/auth-server';
 
 import { patientService } from '../server/db/services';
 import { CreatePatientSchema, DeletePatientSchema, UpdatePatientSchema, UpsertPatientSchema } from '../zodSchemas';
@@ -27,7 +27,7 @@ export async function createPatientAction(input: unknown) {
 
   // 3. Delegate to service
   const patient = await patientService.createPatient(
-    { ...validated, clinicId: session.user.clinic?.id ?? '' },
+    { ...validated, clinicId: session.user?.clinic?.id ?? '' },
     session.user.id
   );
 
@@ -49,7 +49,7 @@ export async function updatePatientAction(id: string, input: unknown) {
   const validated = UpdatePatientSchema.parse(input);
 
   // 3. Delegate to service
-  const patient = await patientService.updatePatient(id, session.user.clinic?.id ?? '', validated);
+  const patient = await patientService.updatePatient(id, session.user?.clinic?.id ?? '', validated);
 
   // 4. Revalidate UI paths
   revalidatePath(`/dashboard/patients/${id}`);
@@ -90,7 +90,7 @@ export async function upsertPatientAction(input: unknown) {
 
   // 3. Delegate to service
   const patient = await patientService.createPatient(
-    { ...validated, clinicId: session.user.clinic?.id ?? '' },
+    { ...validated, clinicId: session.user?.clinic?.id ?? '' },
     session.user.id
   );
 

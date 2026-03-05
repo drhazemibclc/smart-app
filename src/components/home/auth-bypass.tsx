@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-import type { User } from '../provider/auth-provider';
+import type { User } from '../auth/auth-provider';
 
 declare global {
   interface Window {
@@ -35,15 +35,18 @@ export function DevAuthBypass() {
             id: 'test-user-1',
             name: 'Test Doctor',
             email: 'doctor@test.com',
-            role: 'doctor',
-            clinic: undefined,
+            role: 'DOCTOR',
             createdAt: new Date(),
             updatedAt: new Date(),
-            emailVerified: false
+            emailVerified: false,
+            clinic: {
+              id: 'test-clinic-1',
+              name: 'Test Clinic'
+            }
           }
         };
       }
-      setIsEnabled(window.__MOCK_AUTH__.enabled);
+      setIsEnabled(window.__MOCK_AUTH__?.enabled ?? false);
       window.location.reload();
     }
   };

@@ -32,7 +32,7 @@ export class DoseValidator {
       include: { growthRecords: true }
     });
 
-    const weightKg = vitalSign?.growthRecords[0]?.weight;
+    const weightKg = vitalSign?.growthRecords?.weight;
 
     if (!weightKg) {
       result.warnings.push('Patient weight not found. Unable to validate weight-based dose.');
@@ -107,7 +107,7 @@ export async function validateDoseAgainstGuidelines(
 
   // Load patient weight (latest)
   const vitals = await db.vitalSigns.findFirst({
-    where: { patientId, growthRecords: { some: { weight: { not: null } } } },
+    where: { patientId, growthRecords: { weight: { not: null } } },
     orderBy: { recordedAt: 'desc' },
     include: {
       growthRecords: {
@@ -119,7 +119,7 @@ export async function validateDoseAgainstGuidelines(
     }
   });
 
-  const weightKg = vitals?.growthRecords[0]?.weight ?? null;
+  const weightKg = vitals?.growthRecords?.weight ?? null;
 
   // --- Fixed dose validation ---
   if (

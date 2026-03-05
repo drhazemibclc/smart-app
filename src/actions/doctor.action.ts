@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSession } from '@/server/api/utils/index';
+import { getSession } from '@/lib/auth-server';
 import { CreateDoctorSchema, DeleteDoctorSchema } from '@/zodSchemas/doctor.schema';
 
 import { doctorService } from '../server/db/services';

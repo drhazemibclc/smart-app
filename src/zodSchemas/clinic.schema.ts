@@ -98,3 +98,29 @@ export const PaymentFilterSchema = z.object({
 
 // Export the inferred type
 export type PaymentFilterInput = z.infer<typeof PaymentFilterSchema>;
+export const settingSchema = z.object({
+  key: z.string().min(1, 'Key is required').max(255),
+  value: z.string().min(1, 'Value is required')
+});
+
+// For updating settings
+export const updateSettingSchema = settingSchema.partial().extend({
+  id: z.string().cuid()
+});
+
+// For bulk operations
+export const bulkSettingsSchema = z.object({
+  settings: z.array(settingSchema)
+});
+
+// For query filters
+export const settingFiltersSchema = z.object({
+  search: z.string().optional(),
+  limit: z.number().min(1).max(100).default(50),
+  cursor: z.string().cuid().optional()
+});
+
+export type SettingInput = z.infer<typeof settingSchema>;
+export type UpdateSettingInput = z.infer<typeof updateSettingSchema>;
+export type BulkSettingsInput = z.infer<typeof bulkSettingsSchema>;
+export type SettingFilters = z.infer<typeof settingFiltersSchema>;

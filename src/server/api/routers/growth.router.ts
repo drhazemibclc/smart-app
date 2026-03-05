@@ -44,7 +44,7 @@ export const growthRouter = createTRPCRouter({
    */
   getGrowthRecordById: protectedProcedure.input(GrowthRecordByIdSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -85,7 +85,7 @@ export const growthRouter = createTRPCRouter({
    */
   getGrowthRecordsByPatient: protectedProcedure.input(GrowthRecordsByPatientSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -120,7 +120,7 @@ export const growthRouter = createTRPCRouter({
     .input(z.object({ patientId: z.string().uuid(), clinicId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -158,7 +158,7 @@ export const growthRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -190,7 +190,7 @@ export const growthRouter = createTRPCRouter({
     .input(z.object({ patientId: z.string().uuid(), clinicId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -222,7 +222,7 @@ export const growthRouter = createTRPCRouter({
     .input(z.object({ clinicId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -254,7 +254,7 @@ export const growthRouter = createTRPCRouter({
     .input(z.object({ clinicId: z.string().uuid(), limit: z.number().min(1).max(20).default(5) }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -316,7 +316,7 @@ export const growthRouter = createTRPCRouter({
    */
   getGrowthTrends: protectedProcedure.input(GrowthTrendsSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -346,7 +346,7 @@ export const growthRouter = createTRPCRouter({
    */
   calculateVelocity: protectedProcedure.input(VelocityCalculationSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -376,7 +376,7 @@ export const growthRouter = createTRPCRouter({
    */
   compareGrowth: protectedProcedure.input(GrowthComparisonSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -434,7 +434,7 @@ export const growthRouter = createTRPCRouter({
    */
   getGrowthProjection: protectedProcedure.input(GrowthProjectionSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -485,7 +485,7 @@ export const growthRouter = createTRPCRouter({
    */
   getPatientZScoreChart: protectedProcedure.input(PatientZScoreChartSchema).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -532,7 +532,7 @@ export const growthRouter = createTRPCRouter({
    */
   createGrowthRecord: protectedProcedure.input(GrowthRecordCreateSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       // const _userId = ctx.user.id;
 
       if (!clinicId) {
@@ -571,7 +571,7 @@ export const growthRouter = createTRPCRouter({
    */
   updateGrowthRecord: protectedProcedure.input(GrowthRecordUpdateSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       const userId = ctx.user.id;
 
       if (!clinicId) {
@@ -612,7 +612,7 @@ export const growthRouter = createTRPCRouter({
    */
   deleteGrowthRecord: protectedProcedure.input(DeleteGrowthRecordSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       const userId = ctx.user.id;
 
       if (!clinicId) {

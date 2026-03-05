@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
+import { LogoHeaderMinimal } from '../branding/logo-header';
+
 const navItems = [
   {
     label: 'Dashboard',
@@ -73,6 +75,9 @@ export function Sidebar() {
           className='w-64'
           side='left'
         >
+          <div className='flex h-16 items-center border-b px-6'>
+            <LogoHeaderMinimal />
+          </div>
           <nav className='flex flex-col gap-2 py-4'>
             {navItems.map(item => {
               const Icon = item.icon;
@@ -100,7 +105,7 @@ export function Sidebar() {
       {/* Desktop Sidebar */}
       <aside className='hidden w-64 border-r bg-muted/40 lg:flex lg:flex-col'>
         <div className='flex h-16 items-center border-b px-6'>
-          <h1 className='font-bold text-xl'>PediClinic</h1>
+          <LogoHeaderMinimal />
         </div>
 
         <nav className='flex-1 space-y-2 p-4'>

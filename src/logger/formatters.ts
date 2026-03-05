@@ -1,4 +1,4 @@
-import stackTrace from 'stack-trace';
+import * as stackTrace from 'stack-trace';
 
 import type { ErrorDetails } from './types';
 

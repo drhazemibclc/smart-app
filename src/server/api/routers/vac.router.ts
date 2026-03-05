@@ -34,7 +34,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    */
   getImmunizationById: protectedProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -67,7 +67,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!(clinicId && input.patientId)) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -105,7 +105,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -141,7 +141,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -172,7 +172,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -200,7 +200,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ daysAhead: z.number().min(1).max(90).optional().default(30) }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -226,7 +226,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ daysOverdue: z.number().min(1).max(365).optional().default(30) }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -256,7 +256,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -300,7 +300,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ ageMonths: z.number().int().min(0).max(240) }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -328,7 +328,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ patientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!(clinicId && input.patientId)) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -354,7 +354,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ patientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!(clinicId && input.patientId)) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -384,7 +384,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!(clinicId && input.patientId)) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -410,7 +410,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ patientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!(clinicId && input.patientId)) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -436,7 +436,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    */
   recordImmunization: protectedProcedure.input(ImmunizationCreateSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       const userId = ctx.user.id;
 
       if (!clinicId) {
@@ -468,7 +468,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    */
   scheduleVaccination: protectedProcedure.input(ScheduleVaccinationSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       const userId = ctx.user.id;
 
       if (!clinicId) {
@@ -505,7 +505,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
    */
   updateImmunization: protectedProcedure.input(ImmunizationUpdateSchema).mutation(async ({ ctx, input }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       const userId = ctx.user.id;
 
       if (!clinicId) {
@@ -548,7 +548,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         // const userId = ctx.user.id;
 
         if (!clinicId) {
@@ -582,7 +582,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         const userId = ctx.user.id;
 
         if (!clinicId) {
@@ -622,7 +622,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         // const userId = ctx.user.id;
 
         if (!clinicId) {
@@ -663,7 +663,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         // const userId = ctx.user.id;
 
         if (!clinicId) {
@@ -707,7 +707,7 @@ export const vaccinationRouter: AnyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         // const userId = ctx.user.id;
 
         if (!clinicId) {

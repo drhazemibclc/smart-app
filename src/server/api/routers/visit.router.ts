@@ -22,7 +22,7 @@ export const visitRouter = createTRPCRouter({
    * Get visit by ID
    */
   getById: protectedProcedure.input(VisitByIdSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     return appointmentService.getAppointmentById(input.id, clinicId);
   }),
@@ -43,7 +43,7 @@ export const visitRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       const appointments = await appointmentService.getAppointments(clinicId, {
         ...input,
@@ -60,7 +60,7 @@ export const visitRouter = createTRPCRouter({
    * Get visits by patient
    */
   getByPatient: protectedProcedure.input(VisitByPatientSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     // Verify patient belongs to clinic (handled in service)
     return appointmentService.getPatientAppointments(input.patientId, clinicId, {
@@ -73,7 +73,7 @@ export const visitRouter = createTRPCRouter({
    * Get recent visits
    */
   getRecent: protectedProcedure.input(VisitRecentSchema).query(async ({ ctx, input }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     return appointmentService.getAppointments(clinicId, {
       limit: input.limit || 10,
@@ -87,7 +87,7 @@ export const visitRouter = createTRPCRouter({
    * Get today's visits
    */
   getToday: protectedProcedure.input(VisitTodaySchema.optional()).query(async ({ ctx }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     return appointmentService.getTodayAppointments(clinicId);
   }),
@@ -104,7 +104,7 @@ export const visitRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       const startDate = new Date();
       const endDate = new Date();
@@ -127,7 +127,7 @@ export const visitRouter = createTRPCRouter({
    * Get today's visit count
    */
   getTodayCount: protectedProcedure.input(VisitCountTodaySchema.optional()).query(async ({ ctx }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     const fromDate = new Date();
     fromDate.setHours(0, 0, 0, 0);
@@ -142,7 +142,7 @@ export const visitRouter = createTRPCRouter({
    * Get month's visit count
    */
   getMonthCount: protectedProcedure.input(VisitCountMonthSchema.optional()).query(async ({ ctx }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     const now = new Date();
     const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -162,7 +162,7 @@ export const visitRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       const stats = await appointmentService.getAppointmentStats(clinicId);
 
@@ -179,7 +179,7 @@ export const visitRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       let fromDate: Date | undefined;
       let toDate: Date | undefined;
@@ -238,7 +238,7 @@ export const visitRouter = createTRPCRouter({
    * Create visit
    */
   create: protectedProcedure.input(VisitCreateSchema).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     return appointmentService.createAppointment(
       {
@@ -253,7 +253,7 @@ export const visitRouter = createTRPCRouter({
    * Update visit
    */
   update: protectedProcedure.input(VisitUpdateSchema).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     // Get existing appointment to fill in required fields
     const existing = await appointmentService.getAppointmentById(input.id, clinicId);
@@ -293,7 +293,7 @@ export const visitRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       // Get the appointment first to verify clinic access
       const appointment = await appointmentService.getAppointmentById(input.id, clinicId);
@@ -334,7 +334,7 @@ export const visitRouter = createTRPCRouter({
   cancel: protectedProcedure
     .input(z.object({ id: z.string().uuid(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       return appointmentService.cancelAppointment(input.id, ctx.session.user.id, clinicId, input.reason);
     }),
@@ -345,7 +345,7 @@ export const visitRouter = createTRPCRouter({
   complete: protectedProcedure
     .input(z.object({ id: z.string().uuid(), notes: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       return appointmentService.completeAppointment(input.id, ctx.session.user.id, clinicId, input.notes);
     }),
@@ -354,7 +354,7 @@ export const visitRouter = createTRPCRouter({
    * Check in patient
    */
   checkIn: protectedProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ ctx, input }) => {
-    const clinicId = ctx.session.user.clinic?.id ?? '';
+    const clinicId = ctx.session.user?.clinic?.id ?? '';
 
     return appointmentService.checkInPatient(input.id, ctx.session.user.id, clinicId);
   }),
@@ -376,7 +376,7 @@ export const visitRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const clinicId = ctx.session.user.clinic?.id ?? '';
+      const clinicId = ctx.session.user?.clinic?.id ?? '';
 
       return appointmentService.updateAppointment(
         {

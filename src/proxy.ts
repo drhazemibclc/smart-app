@@ -1,67 +1,159 @@
+// src/proxy.ts - Enhanced version with improvements
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { env } from '@/env/server';
-import { auth } from '@/server/auth';
+import { auth, type Session } from '@/server/auth';
+
+// Type-safe role checking
+type UserRole = 'ADMIN' | 'DOCTOR' | 'STAFF' | 'PATIENT';
+
+// Public routes that don't require authentication
+const publicRoutes = [
+  '/', // Home page
+  '/login', // Login page
+  '/register', // Registration
+  '/register-provider', // Provider registration
+  '/choose-role', // Role selection
+  '/about', // Public info pages
+  '/contact',
+  '/services',
+  '/privacy',
+  '/terms',
+  '/api/auth', // Auth API routes
+  '/api/health', // Health check
+  '/api/trpc', // tRPC endpoints (auth handled internally)
+  '/_next', // Next.js internals
+  '/favicon.ico',
+  '/manifest.webmanifest', // PWA manifest
+  '/manifest.ts', // Manifest route
+  '/icons', // Static icons
+  '/sentry-example-page', // Sentry test page
+  '/test-page' // Test page
+] as const;
+
+// Static asset patterns
+const staticAssetPatterns = [
+  /\.(png|ico|json|webp|svg|css|js|jpg|jpeg|gif|woff2?|ttf|eot)$/i,
+  /^\/icons\/.*/i,
+  /^\/images\/.*/i
+];
+
+// Role-based access rules
+const routePermissions: Record<string, UserRole[]> = {
+  '/dashboard/billing': ['ADMIN', 'STAFF'],
+  '/dashboard/growth-charts': ['ADMIN', 'DOCTOR', 'STAFF', 'PATIENT'],
+  '/dashboard/medical-records': ['ADMIN', 'DOCTOR', 'STAFF'],
+  '/dashboard/prescriptions': ['ADMIN', 'DOCTOR'],
+  '/dashboard/patients': ['ADMIN', 'DOCTOR', 'STAFF'],
+  '/dashboard/appointments': ['ADMIN', 'DOCTOR', 'STAFF', 'PATIENT'],
+  '/dashboard/vaccines': ['ADMIN', 'DOCTOR', 'STAFF'],
+  '/dashboard/travel-clearances': ['ADMIN', 'DOCTOR', 'STAFF'],
+  '/dashboard/settings': ['ADMIN', 'STAFF']
+};
 
 export async function proxy(request: NextRequest) {
-  // 1. Skip WebSocket upgrades early
-  const upgradeHeader = request.headers.get('upgrade');
-  if (upgradeHeader?.toLowerCase() === 'websocket') {
-    return NextResponse.next();
+  try {
+    const { pathname } = request.nextUrl;
+
+    // 1. Check static assets first (fastest)
+    if (staticAssetPatterns.some(pattern => pattern.test(pathname))) {
+      return NextResponse.next();
+    }
+
+    // 2. Check exact public routes
+    if (publicRoutes.includes(pathname as (typeof publicRoutes)[number])) {
+      return NextResponse.next();
+    }
+
+    // 3. Check public route prefixes
+    if (publicRoutes.some(route => route !== '/' && pathname.startsWith(route) && route.length > 1)) {
+      return NextResponse.next();
+    }
+
+    // 4. Get session using request headers
+    const session = await auth.api.getSession({
+      headers: request.headers
+    });
+
+    // 5. Redirect to login if no session
+    if (!session?.user) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const role = (session.user.role as string).toUpperCase() as UserRole;
+
+    // 6. Admin bypass - can access everything
+    if (role === 'ADMIN') {
+      return addUserHeaders(NextResponse.next(), session);
+    }
+
+    // 7. Check dashboard route permissions
+    for (const [route, allowedRoles] of Object.entries(routePermissions)) {
+      if (pathname.startsWith(route) && !allowedRoles.includes(role)) {
+        // Log unauthorized access attempt (for monitoring)
+        console.warn(`Unauthorized access attempt: ${role} tried to access ${pathname}`);
+
+        // Redirect to dashboard home with error
+        const dashboardUrl = new URL('/dashboard', request.url);
+        dashboardUrl.searchParams.set('error', 'unauthorized');
+        return NextResponse.redirect(dashboardUrl);
+      }
+    }
+
+    // 8. API routes access control
+    if (pathname.startsWith('/api') && !pathname.startsWith('/api/trpc')) {
+      // Admin API routes
+      if (pathname.startsWith('/api/admin') && role !== 'DOCTOR') {
+        return NextResponse.json({ error: 'Unauthorized', message: 'Admin access required' }, { status: 403 });
+      }
+
+      // Analytics API
+      if (pathname.startsWith('/api/analytics') && !['ADMIN', 'STAFF'].includes(role)) {
+        return NextResponse.json({ error: 'Unauthorized', message: 'Insufficient permissions' }, { status: 403 });
+      }
+
+      // Upload API - staff and above
+      if (pathname.startsWith('/api/upload') && !['ADMIN', 'STAFF', 'DOCTOR'].includes(role)) {
+        return NextResponse.json({ error: 'Unauthorized', message: 'Upload permission denied' }, { status: 403 });
+      }
+    }
+
+    // 9. Add user headers and continue
+    return addUserHeaders(NextResponse.next(), session);
+  } catch (error) {
+    // Log error but don't expose internals
+    console.error('Proxy error:', error);
+
+    // Fail open to login on error
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('error', 'proxy_error');
+    return NextResponse.redirect(loginUrl);
   }
-
-  // 2. Auth Check
-  // Note: In Next 15/16, headers() is async.
-  // We use the request headers directly for better performance in middleware.
-  const session = await auth.api.getSession({
-    headers: request.headers
-  });
-
-  if (session?.user) {
-    return NextResponse.next();
-  }
-
-  // 3. Resolve Redirect URL
-  const publicOrigin = getPublicOrigin(request);
-
-  // Safeguard: Default to the request's own origin if the public one is untrusted or missing
-  const baseUrl =
-    publicOrigin && env.CORS_ORIGIN.includes(publicOrigin)
-      ? publicOrigin
-      : env.BETTER_AUTH_URL || request.nextUrl.origin;
-
-  const loginUrl = new URL('/login', baseUrl);
-
-  // 4. Set callback URL - Ensure we don't redirect to /login from /login
-  const path = request.nextUrl.pathname;
-  if (path !== '/login') {
-    loginUrl.searchParams.set('callbackUrl', `${path}${request.nextUrl.search}`);
-  }
-
-  return NextResponse.redirect(loginUrl, 307);
 }
 
-function getPublicOrigin(request: NextRequest) {
-  const h = request.headers;
-  // Standard headers for reverse proxies (Vercel, Cloudflare, Nginx)
-  const proto = h.get('x-forwarded-proto') ?? 'https';
-  const host = h.get('x-forwarded-host') ?? h.get('host');
+// Helper to add user headers to response
+function addUserHeaders(response: NextResponse, session: Session) {
+  response.headers.set('x-user-id', session.user.id);
+  response.headers.set('x-user-role', session.user.role ?? 'DOCTOR');
+  response.headers.set('x-user-email', session.user.email ?? '');
 
-  if (!host) return null;
+  // Add user name if available
+  if (session.user.name) {
+    response.headers.set('x-user-name', session.user.name);
+  }
 
-  // Remove port if it's standard to avoid mismatch with env.CORS_ORIGIN strings
-  const cleanHost = host.replace(/:(80|443)$/, '');
-  return `${proto}://${cleanHost}`;
+  return response;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth, api/trpc, etc (Internal APIs)
-     * - _next/static, _next/image (static files)
-     * - login, signup, favicon.ico (public pages)
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (static files)
      */
-    '/((?!api/auth|api/health|api/trpc|api/analytics|trpc|_next|_static|favicon|icons|manifest|robots|login|signup|auth-error|sw.js|.*\\.png|.*\\.ico|.*\\.json|.*\\.webp|.*\\.svg|.*\\.css).*)'
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)'
   ]
 };

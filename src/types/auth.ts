@@ -23,12 +23,12 @@ export const toDatabaseRole = (role: Role | undefined): UserRole | undefined => 
 };
 // Extended user type with additional fields
 export interface ExtendedUser extends User {
-  role: Role;
+  role: UserRole;
   clinic: {
     id: string;
     name: string;
   };
-  isAdmin?: boolean;
+  isAdmin: boolean;
   phone?: string | null;
 }
 
@@ -46,7 +46,7 @@ export type AuthContextType = {
   user: ExtendedUser | null;
   session: Session | null;
   isAuthenticated: boolean;
-  role: Role | undefined;
+  role: UserRole | undefined;
   isAdmin: boolean;
   isDoctor: boolean;
   isStaff: boolean;

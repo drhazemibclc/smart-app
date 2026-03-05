@@ -25,6 +25,9 @@
       ],
       "@/prisma/types": [
         "./src/generated/prisma/browser.ts"
+      ],
+      "~/*": [
+        "./*"
       ]
     },
     "plugins": [

@@ -1,6 +1,5 @@
 // components/home/testimonials.tsx
 import { Star } from 'lucide-react';
-import { useId } from 'react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,9 +30,8 @@ const testimonials = [
     initials: 'ER'
   }
 ];
-export function Testimonials() {
-  const componentId = useId();
 
+export function Testimonials() {
   return (
     <div className='grid gap-6 md:grid-cols-3'>
       {testimonials.map(testimonial => (
@@ -43,7 +41,7 @@ export function Testimonials() {
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   className={`h-4 w-4 ${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted'}`}
-                  key={`${componentId}-star-${testimonial.name}`}
+                  key={`star-${testimonial.name}-${i}`}
                 />
               ))}
             </div>

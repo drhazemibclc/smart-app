@@ -7,8 +7,8 @@ import z from 'zod';
 import { staffCreateSchema, staffUpdateSchema } from '../../../zodSchemas';
 import { auth } from '../../auth';
 import { staffService } from '../../db/services';
+import { generateId } from '../../utils/id';
 import { adminProcedure, createTRPCRouter, publicProcedure } from '..';
-import { generateId } from '../utils/id';
 
 const createStaff = staffCreateSchema.extend({
   password: z.string()
@@ -19,7 +19,7 @@ export const staffRouter = createTRPCRouter({
   // 1. getAllStaff (Paginated List)
   // -----------------------------------------------------
   // getAllStaff: publicProcedure.input(GetAllStaffSchema).query(async ({ input }) => {
-  //   const clinicId = ''; // This should ideally come from ctx.session?.user.clinic?.id
+  //   const clinicId = ''; // This should ideally come from ctx.session?.user?.clinic?.id
   //   return await staffService.getAllStaff(clinicId, {
   //     page: input.page,
   //     limit: input.limit,
@@ -34,7 +34,7 @@ export const staffRouter = createTRPCRouter({
    */
   createNewStaff: adminProcedure.input(createStaff).mutation(async ({ input, ctx }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -98,7 +98,7 @@ export const staffRouter = createTRPCRouter({
    */
   updateStaff: adminProcedure.input(staffUpdateSchema).mutation(async ({ input, ctx }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -139,7 +139,7 @@ export const staffRouter = createTRPCRouter({
    */
   deleteStaff: adminProcedure.input(z.object({ id: z.string().uuid() })).mutation(async ({ input, ctx }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -178,7 +178,7 @@ export const staffRouter = createTRPCRouter({
    */
   getStaffById: publicProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input, ctx }) => {
     try {
-      const clinicId = ctx.session?.user.clinic?.id;
+      const clinicId = ctx.session?.user?.clinic?.id;
       if (!clinicId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -221,7 +221,7 @@ export const staffRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       try {
-        const clinicId = ctx.session?.user.clinic?.id;
+        const clinicId = ctx.session?.user?.clinic?.id;
         if (!clinicId) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',

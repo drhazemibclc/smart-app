@@ -3,7 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
 import { env } from '@/env/server';
-import { PrismaClient } from '@/prisma/client';
+import { PrismaClient } from '@/generated/prisma/client';
 
 /**
  * 1. Connection Pool Configuration

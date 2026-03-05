@@ -14,8 +14,8 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { getSession } from '@/lib/auth-server';
 import { cacheHelpers } from '@/lib/cache/utils/helpers';
-import { getSession } from '@/server/api/utils/index';
 
 import { medicalService } from '../server/db';
 import { labTestService, vitalService } from '../server/db/services';
@@ -66,7 +66,7 @@ export async function createVitalSignsAction(input: unknown) {
   // Add clinicId from session if not provided
   const inputWithClinic = {
     ...validated,
-    clinicId: session.user.clinic?.id
+    clinicId: session.user?.clinic?.id
   };
 
   const result = await medicalService.createVitalSigns({
@@ -95,7 +95,7 @@ export async function updateVitalSignsAction(input: VitalSignsUpdateInput) {
 
   const validated = VitalSignsUpdateSchema.parse(input);
 
-  const result = await vitalService.updateVitalSigns(session.user.id, session.user.clinic?.id ?? '', validated);
+  const result = await vitalService.updateVitalSigns(session.user.id, session.user?.clinic?.id ?? '', validated);
 
   // Revalidate paths
   revalidatePath(`/dashboard/patients/${result.patientId}`);
@@ -132,7 +132,7 @@ export async function updateDiagnosisAction(input: DiagnosisUpdateInput) {
 
   const validated = DiagnosisUpdateSchema.parse({ ...input });
 
-  const result = await medicalService.updateDiagnosis(session.user.id, session.user.clinic?.id ?? '', validated);
+  const result = await medicalService.updateDiagnosis(session.user.id, session.user?.clinic?.id ?? '', validated);
 
   revalidatePath(`/dashboard/patients/${result.patientId}`);
   revalidatePath('/dashboard/medical-records');
@@ -176,7 +176,7 @@ export async function createLabTestAction(input: unknown) {
 
   const result = await medicalService.createLabTest({
     ...(validated as LabTestCreateInput),
-    clinicId: session.user.clinic?.id ?? ''
+    clinicId: session.user?.clinic?.id ?? ''
   });
 
   revalidatePath(`/dashboard/patients/${result.medicalRecord?.patientId}`);
@@ -196,7 +196,7 @@ export async function updateLabTestAction(input: LabTestUpdateInput) {
 
   const validated = LabTestUpdateSchema.parse({ ...input });
 
-  const result = await labTestService.updateLabTest(session.user.id, session.user.clinic?.id ?? '', validated);
+  const result = await labTestService.updateLabTest(session.user.id, session.user?.clinic?.id ?? '', validated);
 
   revalidatePath(`/dashboard/patients/${result.medicalRecord?.patientId}`);
   revalidatePath('/dashboard/lab-tests');
