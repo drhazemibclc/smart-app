@@ -1,5 +1,6 @@
 // src/utils/formatDate.test.ts
 import { describe, expect, it } from 'vitest';
+
 import { formatDate } from './formDate';
 
 describe('formatDate', () => {

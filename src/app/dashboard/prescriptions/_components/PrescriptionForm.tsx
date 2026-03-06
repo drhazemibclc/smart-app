@@ -16,8 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { Doctor, Drug, Patient } from '@/prisma/types';
+import { trpc } from '@/utils/trpc';
 
-import { trpc } from '../../../../trpc/query-client';
 import { type CreatePrescriptionInput, CreatePrescriptionSchema } from '../../../../zodSchemas';
 
 interface PrescriptionFormProps {

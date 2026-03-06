@@ -15,15 +15,6 @@ interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-// export async function generateMetadata({ params }: PatientDetailPageProps): Promise<Metadata> {
-//   const { slug } = await params;  // Must await!
-//   const post = await getPost(slug);
-
-//   return {
-//     title: post?.title || 'Post Not Found',
-//     description: post?.excerpt,
-//   };
-// }
 export async function generateMetadata({ params }: PatientDetailPageProps): Promise<Metadata> {
   const { id } = await params;
   return {
@@ -57,7 +48,7 @@ async function PatientDetailContent({ patientId }: { patientId: string }) {
   }
 }
 
-export default async function PatientDetailPage({ params }: PatientDetailPageProps) {
+async function PatientDetailWrapper({ params }: PatientDetailPageProps) {
   const { id } = await params;
 
   return (
@@ -89,5 +80,13 @@ export default async function PatientDetailPage({ params }: PatientDetailPagePro
         <PatientDetailContent patientId={id} />
       </Suspense>
     </div>
+  );
+}
+
+export default function PatientDetailPage({ params }: PatientDetailPageProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PatientDetailWrapper params={params} />
+    </Suspense>
   );
 }

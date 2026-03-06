@@ -2,9 +2,11 @@ import { ChevronLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getSession } from '@/lib/auth-server';
 import { patientService } from '@/server/db/services';
 
@@ -23,8 +25,7 @@ export async function generateMetadata({ params }: EditPatientPageProps): Promis
   };
 }
 
-export default async function EditPatientPage({ params }: EditPatientPageProps) {
-  const { id } = await params;
+async function EditPatientContent({ patientId }: { patientId: string }) {
   const session = await getSession();
 
   if (!session?.user?.clinic?.id) {
@@ -35,7 +36,7 @@ export default async function EditPatientPage({ params }: EditPatientPageProps) 
     );
   }
 
-  const patientData = await patientService.getPatientById(id, session.user.clinic.id);
+  const patientData = await patientService.getPatientById(patientId, session.user.clinic.id);
 
   if (!patientData) {
     notFound();
@@ -78,6 +79,25 @@ export default async function EditPatientPage({ params }: EditPatientPageProps) 
   };
 
   return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Patient Information</CardTitle>
+        <CardDescription>Update the patient details below. Fields marked with * are required.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <EditPatientForm
+          patient={patient}
+          patientId={patientId}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+async function EditPatientWrapper({ params }: EditPatientPageProps) {
+  const { id } = await params;
+
+  return (
     <div className='flex flex-col gap-6'>
       <div className='flex items-center gap-4'>
         <Button
@@ -90,25 +110,22 @@ export default async function EditPatientPage({ params }: EditPatientPageProps) 
           </Link>
         </Button>
         <div>
-          <h1 className='font-semibold text-3xl tracking-tight'>
-            Edit Patient: {patient.firstName} {patient.lastName}
-          </h1>
+          <h1 className='font-semibold text-3xl tracking-tight'>Edit Patient</h1>
           <p className='text-muted-foreground text-sm'>Update patient information</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Patient Information</CardTitle>
-          <CardDescription>Update the patient details below. Fields marked with * are required.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EditPatientForm
-            patient={patient}
-            patientId={id}
-          />
-        </CardContent>
-      </Card>
+      <Suspense fallback={<Skeleton className='h-96 w-full' />}>
+        <EditPatientContent patientId={id} />
+      </Suspense>
     </div>
+  );
+}
+
+export default function EditPatientPage({ params }: EditPatientPageProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditPatientWrapper params={params} />
+    </Suspense>
   );
 }

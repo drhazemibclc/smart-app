@@ -21,21 +21,22 @@ interface PrescriptionDetailPageProps {
   }>;
 }
 
-export default async function PrescriptionDetailPage({ params }: PrescriptionDetailPageProps) {
-  const session = await getSession();
-  if (!session?.user?.clinic?.id) notFound();
-
-  const { id } = await params;
-  const clinicId = session.user.clinic.id;
-
-  const prescription = await getCachedPrescriptionById(id, clinicId);
+async function PrescriptionDetailContent({
+  prescriptionId,
+  clinicId,
+  canEdit
+}: {
+  prescriptionId: string;
+  clinicId: string;
+  canEdit: boolean;
+}) {
+  const prescription = await getCachedPrescriptionById(prescriptionId, clinicId);
 
   if (!prescription) {
     notFound();
   }
 
-  const canEdit = session.user.role === 'DOCTOR';
-  const canPrint = true; // Based on permissions
+  const canPrint = true;
 
   return (
     <div className='container mx-auto space-y-6 py-6'>
@@ -96,6 +97,30 @@ export default async function PrescriptionDetailPage({ params }: PrescriptionDet
         </Card>
       )}
     </div>
+  );
+}
+
+async function PrescriptionDetailWrapper({ params }: PrescriptionDetailPageProps) {
+  const session = await getSession();
+  if (!session?.user?.clinic?.id) notFound();
+
+  const { id } = await params;
+  const canEdit = session.user.role === 'DOCTOR';
+
+  return (
+    <PrescriptionDetailContent
+      canEdit={canEdit}
+      clinicId={session.user.clinic.id}
+      prescriptionId={id}
+    />
+  );
+}
+
+export default function PrescriptionDetailPage({ params }: PrescriptionDetailPageProps) {
+  return (
+    <Suspense fallback={<div>Loading prescription...</div>}>
+      <PrescriptionDetailWrapper params={params} />
+    </Suspense>
   );
 }
 

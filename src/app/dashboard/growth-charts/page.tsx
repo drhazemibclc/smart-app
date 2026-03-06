@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { prisma } from '@/db/client';
 
 import { getSession } from '../../../lib/auth-server';
 import { GrowthChartsClient } from './_components/client';
+import { GrowthChartsSkeleton } from './_components/skeleton';
 
-export default async function GrowthChartsPage() {
+async function GrowthChartsData() {
   const session = await getSession();
 
   if (!session?.user) {
@@ -41,5 +43,13 @@ export default async function GrowthChartsPage() {
       clinicId={session.user?.clinic?.id ?? ''}
       patients={serializedPatients}
     />
+  );
+}
+
+export default function GrowthChartsPage() {
+  return (
+    <Suspense fallback={<GrowthChartsSkeleton />}>
+      <GrowthChartsData />
+    </Suspense>
   );
 }

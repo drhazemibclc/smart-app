@@ -208,9 +208,9 @@ export const auth = betterAuth({
           role: dbUser?.role ?? 'PATIENT',
           clinic: primaryClinic
             ? {
-              id: primaryClinic.userId,
-              name: primaryClinic.user.name
-            }
+                id: primaryClinic.userId,
+                name: primaryClinic.user.name
+              }
             : undefined
         }
       };

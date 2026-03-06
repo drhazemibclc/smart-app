@@ -1,6 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description: 'Add a new patient'
 };
 
-export default async function NewPatientPage() {
+async function NewPatientContent() {
   const session = await getSession();
 
   if (!session?.user?.clinic?.id) {
@@ -52,5 +53,13 @@ export default async function NewPatientPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function NewPatientPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewPatientContent />
+    </Suspense>
   );
 }

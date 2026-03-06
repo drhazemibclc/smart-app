@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, Loader2, Lock, Mail, User } from 'lucide-react';
+import { Loader2, Lock, Mail, User } from 'lucide-react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,7 +17,7 @@ import { signUpDoctor } from '../../actions/auth/auth-actions';
 import { signInWithGoogle } from '../../actions/auth/google-auth-actions';
 import { ROLE_REDIRECTS } from '../../lib/routes';
 import { SignUpDoctorSchema } from '../../zodSchemas';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 
 export function RegisterDoctorForm() {
   const [isLoading, setIsLoading] = useState(false);

@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDateTime } from '@/server/db/utils';
+import { formatDate } from '@/utils/formDate';
 import { trpc } from '@/utils/trpc';
 
 interface ExpiringPrescriptionsAlertProps {
@@ -63,7 +63,7 @@ export function ExpiringPrescriptionsAlert({ clinicId }: ExpiringPrescriptionsAl
 
               <span className='ml-2 flex items-center whitespace-nowrap text-xs'>
                 <Calendar className='mr-1 h-3 w-3' />
-                {p.endDate ? formatDateTime(p.endDate) : 'Unknown'}
+                {p.endDate ? formatDate(p.endDate) : 'Unknown'}
               </span>
             </div>
           ))}

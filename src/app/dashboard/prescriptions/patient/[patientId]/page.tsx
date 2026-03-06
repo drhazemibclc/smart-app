@@ -16,13 +16,7 @@ interface PatientPrescriptionsPageProps {
   }>;
 }
 
-export default async function PatientPrescriptionsPage({ params }: PatientPrescriptionsPageProps) {
-  const session = await getSession();
-  if (!session?.user?.clinic?.id) notFound();
-
-  const { patientId } = await params;
-  const clinicId = session.user.clinic.id;
-
+async function PatientPrescriptionsContent({ patientId, clinicId }: { patientId: string; clinicId: string }) {
   // Verify patient exists
   const patient = await getCachedPatientById(patientId, clinicId);
   if (!patient) notFound();
@@ -50,6 +44,28 @@ export default async function PatientPrescriptionsPage({ params }: PatientPrescr
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+async function PatientPrescriptionsWrapper({ params }: PatientPrescriptionsPageProps) {
+  const session = await getSession();
+  if (!session?.user?.clinic?.id) notFound();
+
+  const { patientId } = await params;
+
+  return (
+    <PatientPrescriptionsContent
+      clinicId={session.user.clinic.id}
+      patientId={patientId}
+    />
+  );
+}
+
+export default function PatientPrescriptionsPage({ params }: PatientPrescriptionsPageProps) {
+  return (
+    <Suspense fallback={<div>Loading patient prescriptions...</div>}>
+      <PatientPrescriptionsWrapper params={params} />
+    </Suspense>
   );
 }
 

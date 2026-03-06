@@ -19,18 +19,19 @@ interface NewPrescriptionPageProps {
   }>;
 }
 
-export default async function NewPrescriptionPage({ searchParams }: NewPrescriptionPageProps) {
-  const session = await getSession();
-  if (!session?.user?.clinic?.id) notFound();
-
-  // Only doctors can create prescriptions
-  if (session.user.role !== 'DOCTOR') {
-    notFound();
-  }
-
-  const { patientId, medicalRecordId, encounterId } = await searchParams;
-  const clinicId = session.user.clinic.id;
-
+async function NewPrescriptionContent({
+  clinicId,
+  doctorId,
+  patientId,
+  medicalRecordId,
+  encounterId
+}: {
+  clinicId: string;
+  doctorId: string;
+  patientId?: string;
+  medicalRecordId?: string;
+  encounterId?: string;
+}) {
   // Fetch data in parallel
   const [patient, doctors, drugs] = await Promise.all([
     patientId ? getCachedPatientById(patientId, clinicId) : null,
@@ -51,17 +52,47 @@ export default async function NewPrescriptionPage({ searchParams }: NewPrescript
           <Suspense fallback={<FormSkeleton />}>
             <PrescriptionForm
               clinicId={clinicId}
-              doctorId={session.user.id}
+              doctorId={doctorId}
               doctors={doctors}
               drugs={drugs}
               initialEncounterId={encounterId}
               initialMedicalRecordId={medicalRecordId}
-              initialPatient={patient} // Assuming user.id is the doctor ID
+              initialPatient={patient}
             />
           </Suspense>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+async function NewPrescriptionWrapper({ searchParams }: NewPrescriptionPageProps) {
+  const session = await getSession();
+  if (!session?.user?.clinic?.id) notFound();
+
+  // Only doctors can create prescriptions
+  if (session.user.role !== 'DOCTOR') {
+    notFound();
+  }
+
+  const { patientId, medicalRecordId, encounterId } = await searchParams;
+
+  return (
+    <NewPrescriptionContent
+      clinicId={session.user.clinic.id}
+      doctorId={session.user.id}
+      encounterId={encounterId}
+      medicalRecordId={medicalRecordId}
+      patientId={patientId}
+    />
+  );
+}
+
+export default function NewPrescriptionPage({ searchParams }: NewPrescriptionPageProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewPrescriptionWrapper searchParams={searchParams} />
+    </Suspense>
   );
 }
 

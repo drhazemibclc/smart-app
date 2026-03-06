@@ -1,6 +1,7 @@
 // apps/web/src/app/(dashboard)/appointments/new/page.tsx
 
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { HydrateClient, prefetch } from '@/trpc/server';
 import { trpc } from '@/utils/trpc';
@@ -8,7 +9,7 @@ import { trpc } from '@/utils/trpc';
 import { getSession } from '../../../../lib/auth-server';
 import { AppointmentForm } from '../_components/appointment-form';
 
-export default async function NewAppointmentPage() {
+async function NewAppointmentContent() {
   const session = await getSession();
   if (!session?.user) redirect('/login');
 
@@ -24,5 +25,13 @@ export default async function NewAppointmentPage() {
         <AppointmentForm />
       </div>
     </HydrateClient>
+  );
+}
+
+export default function NewAppointmentPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewAppointmentContent />
+    </Suspense>
   );
 }

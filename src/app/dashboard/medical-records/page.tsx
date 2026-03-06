@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { prisma } from '@/db/client';
 
 import { getSession } from '../../../lib/auth-server';
 import { MedicalRecordsClient } from './_components/client';
 
-export default async function MedicalRecordsPage() {
+async function MedicalRecordsData() {
   const session = await getSession();
 
   if (!session?.user) {
@@ -68,5 +69,13 @@ export default async function MedicalRecordsPage() {
       userId={session.user.id}
       userRole={session.user.role}
     />
+  );
+}
+
+export default function MedicalRecordsPage() {
+  return (
+    <Suspense fallback={<div>Loading medical records...</div>}>
+      <MedicalRecordsData />
+    </Suspense>
   );
 }

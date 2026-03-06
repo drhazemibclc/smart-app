@@ -25,31 +25,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Prisma } from '@/prisma/client';
+import { formatDate } from '@/utils/formDate';
 import { trpc } from '@/utils/trpc';
-
-import { Skeleton } from '../../../../components/ui/skeleton';
-import { formatDateTime } from '../../../../server/db/utils';
 
 interface PatientPrescriptionHistoryProps {
   patientId: string;
   clinicId: string;
 }
 
-// Define the prescription type with all necessary relations
-type PrescriptionItem = Prisma.PrescriptionGetPayload<{
-  include: {
-    doctor: { select: { id: true; name: true } };
-    prescribedItems: {
-      include: {
-        drug: { select: { id: true; name: true } };
-      };
-    };
-    encounter: { select: { id: true; diagnosis: true } };
-  };
-}>;
+// // Define the prescription type with all necessary relations
+// type PrescriptionItem = Prisma.PrescriptionGetPayload<{
+//   include: {
+//     doctor: { select: { id: true; name: true } };
+//     prescribedItems: {
+//       include: {
+//         drug: { select: { id: true; name: true } };
+//       };
+//     };
+//     encounter: { select: { id: true; diagnosis: true } };
+//   };
+// }>;
 
 export function PatientPrescriptionHistory({ patientId }: PatientPrescriptionHistoryProps) {
   const router = useRouter();
@@ -207,7 +205,7 @@ export function PatientPrescriptionHistory({ patientId }: PatientPrescriptionHis
                       key={prescription.id}
                       onClick={() => router.push(`/prescriptions/${prescription.id}`)}
                     >
-                      <TableCell>{formatDateTime(prescription.issuedDate)}</TableCell>
+                      <TableCell>{formatDate(prescription.issuedDate)}</TableCell>
                       <TableCell className='font-medium'>
                         {prescription.medicationName || `${prescription.prescribedItems?.length || 0} items`}
                       </TableCell>
@@ -298,13 +296,13 @@ function ActivePrescriptionCard({ prescription, onClick }: ActivePrescriptionCar
 
             <div>
               <p className='text-muted-foreground text-sm'>Issued</p>
-              <p className='font-medium'>{formatDateTime(prescription.issuedDate)}</p>
+              <p className='font-medium'>{formatDate(prescription.issuedDate)}</p>
             </div>
 
             {prescription.endDate && (
               <div>
                 <p className='text-muted-foreground text-sm'>Valid until</p>
-                <p className='font-medium'>{formatDateTime(prescription.endDate)}</p>
+                <p className='font-medium'>{formatDate(prescription.endDate)}</p>
               </div>
             )}
 
@@ -366,7 +364,7 @@ function TimelineItem({ prescription, onClick }: TimelineItemProps) {
             <span className='font-medium'>{prescription.medicationName || 'Multiple Medications'}</span>
             <PrescriptionStatusBadge status={prescription.status} />
           </div>
-          <span className='text-muted-foreground text-sm'>{formatDateTime(prescription.issuedDate)}</span>
+          <span className='text-muted-foreground text-sm'>{formatDate(prescription.issuedDate)}</span>
         </div>
 
         <div className='flex items-center gap-4 text-sm'>
@@ -378,7 +376,7 @@ function TimelineItem({ prescription, onClick }: TimelineItemProps) {
               <span>•</span>
               <span className='flex items-center gap-1'>
                 <Calendar className='h-3 w-3' />
-                Until {formatDateTime(prescription.endDate)}
+                Until {formatDate(prescription.endDate)}
               </span>
             </>
           )}
@@ -389,6 +387,8 @@ function TimelineItem({ prescription, onClick }: TimelineItemProps) {
 }
 
 // Import the status badge component (make sure it's exported from the correct path)
+import type { PrescriptionItem } from '@/types/prescription';
+
 import { PrescriptionStatusBadge } from './PrescriptionStatusBadge';
 
 function HistorySkeleton() {

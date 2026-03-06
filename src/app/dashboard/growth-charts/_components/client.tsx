@@ -1,10 +1,10 @@
+// src/app/dashboard/growth-charts/_components/client.tsx
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Activity, Baby, Plus, RefreshCw, Ruler, Trash2, Weight } from 'lucide-react';
-import { useState } from 'react';
-import { CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Baby, Plus, RefreshCw, Ruler, Trash2, Weight } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -17,19 +17,25 @@ import { trpc } from '@/utils/trpc';
 
 import { toNumber } from '../../../../lib/decimal';
 import type { MeasurementType } from '../../../../server/db/types';
+import { calculateAge, getPercentileVariant } from '../../../../utils/formDate';
 import { AddGrowthRecordModal } from './add-growth-record-modal';
-import { GrowthChartTooltip } from './growth-chart-tooltip';
 import { GrowthStatsCards } from './growth-stats-cards';
 
-type Gender = 'MALE' | 'FEMALE';
-
+// Define types locally to avoid import issues
 interface Patient {
   id: string;
   firstName: string;
   lastName: string;
-  dateOfBirth: string;
-  gender: string;
+  dateOfBirth: string | null;
+  gender: string | null;
 }
+
+type Gender = 'MALE' | 'FEMALE';
+
+// Lazy load the chart renderer with correct typing
+const GrowthChartRenderer = lazy(() =>
+  import('./GrowthChartRenderer').then(mod => ({ default: mod.GrowthChartRenderer }))
+);
 
 interface GrowthChartsClientProps {
   patients: Patient[];
@@ -54,15 +60,15 @@ interface ChartResponse {
   percentiles: PercentileData[];
   percentileData: Array<{
     ageInMonths: number;
-    [key: string]: number; // For dynamic percentile fields (e.g., p5, p50, p95)
+    [key: string]: number;
   }>;
 }
 
 const measurementTypes = [
-  { value: 'WEIGHT' as MeasurementType, label: 'Weight (kg)', icon: Weight, color: '#3b82f6' },
-  { value: 'HEIGHT' as MeasurementType, label: 'Height (cm)', icon: Ruler, color: '#10b981' },
-  { value: 'HEAD_CIRCUMFERENCE' as MeasurementType, label: 'Head Circumference (cm)', icon: Baby, color: '#f59e0b' },
-  { value: 'BMI' as MeasurementType, label: 'BMI', icon: Activity, color: '#8b5cf6' }
+  { value: 'Weight' as MeasurementType, label: 'Weight (kg)', icon: Weight, color: '#3b82f6' },
+  { value: 'Height' as MeasurementType, label: 'Height (cm)', icon: Ruler, color: '#10b981' },
+  { value: 'HeadCircumference' as MeasurementType, label: 'Head Circumference (cm)', icon: Baby, color: '#f59e0b' }
+  // { value: 'BMI' as MeasurementType, label: 'BMI', icon: Activity, color: '#8b5cf6' }
 ];
 
 export function GrowthChartsClient({ patients, clinicId }: GrowthChartsClientProps) {
@@ -167,7 +173,7 @@ export function GrowthChartsClient({ patients, clinicId }: GrowthChartsClientPro
                 Select Patient
               </label>
               <Select
-                onValueChange={setSelectedPatientId}
+                onValueChange={value => setSelectedPatientId(value)}
                 value={selectedPatientId}
               >
                 <SelectTrigger id='patient-select'>
@@ -241,7 +247,9 @@ export function GrowthChartsClient({ patients, clinicId }: GrowthChartsClientPro
       {/* Stats Cards */}
       {selectedPatient && summary && (
         <GrowthStatsCards
-          patientAge={selectedPatient.dateOfBirth ? calculateAge(new Date(selectedPatient.dateOfBirth)) : undefined}
+          patientAge={
+            selectedPatient.dateOfBirth ? String(calculateAge(new Date(selectedPatient.dateOfBirth))) : undefined
+          }
           summary={summary}
         />
       )}
@@ -264,53 +272,17 @@ export function GrowthChartsClient({ patients, clinicId }: GrowthChartsClientPro
             <Skeleton className='h-[400px] w-full' />
           ) : patientMeasurements.length > 0 ? (
             <div className='h-[400px] w-full'>
-              <ResponsiveContainer
-                height='100%'
-                width='100%'
-              >
-                <ComposedChart
+              <Suspense fallback={<Skeleton className='h-[400px] w-full' />}>
+                <GrowthChartRenderer
                   data={patientMeasurements}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray='3 3' />
-                  <XAxis
-                    dataKey='ageInMonths'
-                    domain={[0, 60]}
-                    label={{ value: 'Age (months)', position: 'insideBottom', offset: -5 }}
-                    type='number'
-                  />
-                  <YAxis label={{ value: getYAxisLabel(measurementType), angle: -90, position: 'insideLeft' }} />
-                  <Tooltip content={<GrowthChartTooltip measurementType={measurementType} />} />
-                  <Legend />
-
-                  {/* WHO Percentile Lines */}
-                  {percentileLines.map((percentile: PercentileData, index: number) => (
-                    <Line
-                      data={percentileData}
-                      dataKey={`p${percentile.percentile}`}
-                      dot={false}
-                      key={`percentile-${percentile.percentile}`}
-                      name={`${percentile.percentile}th percentile`}
-                      stroke={`rgba(156, 163, 175, ${0.3 + index * 0.1})`}
-                      strokeDasharray='5 5'
-                      strokeWidth={1}
-                      type='monotone'
-                    />
-                  ))}
-
-                  {/* Patient Measurements */}
-                  <Line
-                    activeDot={{ r: 8 }}
-                    data={patientMeasurements}
-                    dataKey='value'
-                    dot={{ r: 6, fill: '#3b82f6' }}
-                    name='Patient'
-                    stroke={measurementTypes.find(t => t.value === measurementType)?.color || '#3b82f6'}
-                    strokeWidth={3}
-                    type='monotone'
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
+                  gender={patientGender}
+                  measurementType={measurementType}
+                  measurementTypes={measurementTypes}
+                  patientName={selectedPatient ? `${selectedPatient.firstName} ${selectedPatient.lastName}` : ''}
+                  percentileData={percentileData}
+                  percentiles={percentileLines}
+                />
+              </Suspense>
             </div>
           ) : (
             <div className='flex h-[400px] items-center justify-center'>
@@ -398,39 +370,8 @@ export function GrowthChartsClient({ patients, clinicId }: GrowthChartsClientPro
         }}
         open={isAddModalOpen}
         patientId={selectedPatientId}
-        patients={patients}
+        patients={patients.map(p => ({ id: p.id, firstName: p.firstName, lastName: p.lastName }))}
       />
     </div>
   );
-}
-
-// Helper functions
-function calculateAge(dateOfBirth: Date): string {
-  const today = new Date();
-  const months = (today.getFullYear() - dateOfBirth.getFullYear()) * 12 + (today.getMonth() - dateOfBirth.getMonth());
-
-  if (months < 24) {
-    return `${months} months`;
-  }
-  const years = Math.floor(months / 12);
-  return `${years} years`;
-}
-
-function getYAxisLabel(type: MeasurementType): string {
-  switch (type) {
-    case 'Weight':
-      return 'Weight (kg)';
-    case 'Height':
-      return 'Height (cm)';
-    case 'HeadCircumference':
-      return 'Head Circumference (cm)';
-    default:
-      return '';
-  }
-}
-
-function getPercentileVariant(percentile: number): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (percentile < 5 || percentile > 95) return 'destructive';
-  if (percentile < 10 || percentile > 90) return 'secondary';
-  return 'default';
 }

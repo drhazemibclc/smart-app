@@ -1,11 +1,12 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { auth } from '@/server/auth';
 
 import Dashboard from './dashboard';
 
-export default async function DashboardPage() {
+async function DashboardContent() {
   const session = await auth.api.getSession({
     headers: await headers()
   });
@@ -20,5 +21,13 @@ export default async function DashboardPage() {
       <p>Welcome {session.user.name}</p>
       <Dashboard session={session} />
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

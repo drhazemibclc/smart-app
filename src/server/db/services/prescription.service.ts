@@ -1,5 +1,6 @@
 // src/server/db/services/prescription.service.ts
 import logger from '@/logger';
+import { calculateAge } from '@/utils/formDate';
 
 import type { Prisma } from '../../../generated/prisma/browser';
 import { diagnosisRepo } from '..';
@@ -10,7 +11,6 @@ import type {
   PrescriptionWithFullRelations,
   PrescriptionWithMedicalRelations
 } from '../repositories/prescription.repo';
-import { calculateAge } from '../utils';
 
 interface PrescriptionTrendRaw {
   year: number;

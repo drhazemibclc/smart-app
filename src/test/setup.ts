@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
@@ -10,6 +11,7 @@ process.env.BETTER_AUTH_URL = 'http://localhost:3000';
 // Cleanup after each test
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
 });
 
 // Mock Next.js router
@@ -21,4 +23,14 @@ vi.mock('next/navigation', () => ({
   }),
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams()
+}));
+
+// Mock Next.js headers
+vi.mock('next/headers', () => ({
+  headers: vi.fn(() => new Headers()),
+  cookies: vi.fn(() => ({
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn()
+  }))
 }));

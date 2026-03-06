@@ -85,7 +85,7 @@ async function seedAdmin() {
           password: adminPassword,
           name: adminName,
           role: 'admin',
-          data:{
+          data: {
             role: 'ADMIN',
             clinicId: clinic.id
           }

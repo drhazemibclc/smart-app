@@ -1,14 +1,13 @@
-import type { AnyRouter } from '@trpc/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { createTRPCRouter, protectedProcedure } from '..';
 
-export const userRouter: AnyRouter = createTRPCRouter({
+export const userRouter = createTRPCRouter({
   /**
    * Get current user
    */
-  getCurrent: protectedProcedure.query(async ({ ctx }) => {
+  getCurrent: protectedProcedure.query(({ ctx }) => {
     return ctx.session?.user;
   }),
 
@@ -18,7 +17,7 @@ export const userRouter: AnyRouter = createTRPCRouter({
   clinics: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user.id;
 
-    const memberships = await ctx.db?.clinicMember.findMany({
+    const memberships = await ctx.db.clinicMember.findMany({
       where: { userId },
       include: {
         clinic: {
@@ -83,7 +82,7 @@ export const userRouter: AnyRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;
 
-      const user = await ctx.db.user.update({
+      return ctx.db.user.update({
         where: { id: userId },
         data: input,
         select: {
@@ -94,7 +93,5 @@ export const userRouter: AnyRouter = createTRPCRouter({
           phone: true
         }
       });
-
-      return user;
     })
 });

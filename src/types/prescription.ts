@@ -1,9 +1,10 @@
 // src/modules/prescription/prescription.types.ts
-import type { Diagnosis, Doctor, Drug, PrescribedItem, Prescription } from '@/prisma/types';
+import type { Diagnosis, Doctor, Drug, Patient, PrescribedItem, Prescription } from '@/prisma/types';
 
 // ==================== EXTENDED TYPES ====================
 export type PrescriptionWithRelations = Prescription & {
   doctor?: Pick<Doctor, 'id' | 'name'> | null;
+  patient?: Pick<Patient, 'id' | 'firstName' | 'lastName'> | null;
   encounter?: Pick<Diagnosis, 'id' | 'diagnosis'> | null;
   prescribedItems: (PrescribedItem & {
     drug: Pick<Drug, 'id' | 'name'>;
@@ -131,4 +132,32 @@ export interface DashboardStats {
     active: number;
   }>;
   expiringSoon: number;
+}
+// src/types/prescription.ts (Shared types)
+export interface PrescriptionItem {
+  id: string;
+  medicationName?: string | null;
+  status: string;
+  issuedDate: Date | string;
+  endDate?: Date | string | null;
+  instructions?: string | null;
+  doctor?: {
+    id: string;
+    name: string | null;
+  } | null;
+  prescribedItems?: Array<{
+    id: string;
+    drug?: { id: string; name: string } | null;
+  }>;
+  encounter?: {
+    id: string;
+    diagnosis?: string | null;
+  } | null;
+}
+
+// For API responses
+export interface PrescriptionHistoryResponse {
+  items: PrescriptionItem[];
+  total: number;
+  hasMore: boolean;
 }

@@ -27,7 +27,7 @@ export function onRequestError(error: Error, request: Request, context: Sentry.C
         context,
         timestamp: new Date().toISOString(),
         request: { url: request.url, method: request.method }
-      },
+      }
     });
   }
 
@@ -36,7 +36,7 @@ export function onRequestError(error: Error, request: Request, context: Sentry.C
     console.error('📝 Request Error (not sent to Sentry):', {
       error: error.message,
       url: request.url,
-      method: request.method,
+      method: request.method
     });
   }
 }

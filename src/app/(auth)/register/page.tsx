@@ -5,6 +5,9 @@ import Link from 'next/link';
 
 import { RegisterUserForm } from '@/components/auth/register-user-form';
 
+// ✅ Removed deprecated export const dynamic = 'force-dynamic'
+// Client components are dynamic by default with Cache Components enabled
+
 export default function SignupUserPage() {
   return (
     <div className='min-h-screen w-full lg:grid lg:grid-cols-2'>

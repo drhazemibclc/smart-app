@@ -15,11 +15,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { Prisma } from '@/prisma/client';
-import { formatDateTime } from '@/server/db/utils';
-import { trpc } from '@/trpc/query-client';
+import { formatDate } from '@/utils/formDate';
 
 import { cn } from '../../../../lib/utils';
+import type { PrescriptionWithRelations as PrescriptionItem } from '../../../../types/prescription';
+import { trpc } from '../../../../utils/trpc';
 import { PrescriptionStatusBadge } from './PrescriptionStatusBadge';
 
 interface PrescriptionListProps {
@@ -32,18 +32,18 @@ interface PrescriptionListProps {
 }
 
 // Define the prescription type with all necessary relations including patient
-type PrescriptionItem = Prisma.PrescriptionGetPayload<{
-  include: {
-    doctor: { select: { id: true; name: true } };
-    prescribedItems: {
-      include: {
-        drug: { select: { id: true; name: true } };
-      };
-    };
-    encounter: { select: { id: true; diagnosis: true } };
-    patient: { select: { id: true; firstName: true; lastName: true } };
-  };
-}>;
+// type PrescriptionItem = Prisma.PrescriptionGetPayload<{
+//   include: {
+//     doctor: { select: { id: true; name: true } };
+//     prescribedItems: {
+//       include: {
+//         drug: { select: { id: true; name: true } };
+//       };
+//     };
+//     encounter: { select: { id: true; diagnosis: true } };
+//     patient: { select: { id: true; firstName: true; lastName: true } };
+//   };
+// }>;
 
 type PrescriptionItemWithOptionalPatient = Omit<PrescriptionItem, 'patient'> & {
   patient?: PrescriptionItem['patient'] | null;
@@ -148,9 +148,9 @@ export function PrescriptionList({
 
                 <TableCell>{p.medicationName ?? `${p.prescribedItems?.length ?? 0} items`}</TableCell>
 
-                <TableCell>{formatDateTime(p.issuedDate)}</TableCell>
+                <TableCell>{formatDate(p.issuedDate)}</TableCell>
 
-                <TableCell>{p.endDate ? formatDateTime(p.endDate) : 'Ongoing'}</TableCell>
+                <TableCell>{p.endDate ? formatDate(p.endDate) : 'Ongoing'}</TableCell>
 
                 <TableCell>
                   <PrescriptionStatusBadge status={p.status as 'active' | 'completed' | 'cancelled'} />

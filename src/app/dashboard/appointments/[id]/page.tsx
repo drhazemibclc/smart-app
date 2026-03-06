@@ -1,6 +1,7 @@
 // apps/web/src/app/(dashboard)/appointments/[id]/page.tsx
 
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { HydrateClient, prefetch } from '@/trpc/server';
 import { trpc } from '@/utils/trpc';
@@ -12,18 +13,31 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function AppointmentDetailsPage({ params }: PageProps) {
-  const { id } = await params;
+async function AppointmentDetailsContent({ appointmentId }: { appointmentId: string }) {
   const session = await getSession();
 
   if (!session?.user) redirect('/login');
 
   // Prefetch appointment data
-  await prefetch(trpc.appointment.getById.queryOptions({ id }));
+  void prefetch(trpc.appointment.getById.queryOptions({ id: appointmentId }));
 
   return (
     <HydrateClient>
-      <AppointmentDetails id={id} />
+      <AppointmentDetails id={appointmentId} />
     </HydrateClient>
+  );
+}
+
+async function AppointmentDetailsWrapper({ params }: PageProps) {
+  const { id } = await params;
+
+  return <AppointmentDetailsContent appointmentId={id} />;
+}
+
+export default function AppointmentDetailsPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<div>Loading appointment...</div>}>
+      <AppointmentDetailsWrapper params={params} />
+    </Suspense>
   );
 }

@@ -17,9 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import type { Appointment, AppointmentStatus, AppointmentType } from '@/db/types';
 import { cn } from '@/lib/utils';
-import { trpc } from '@/utils/trpc'; // Fixed import path
-
-import { toNumber } from '../../../../server/db/utils';
+import { toNumber } from '@/utils/decimal';
+import { trpc } from '@/utils/trpc';
 
 // Following guide: Properly typed status colors with Record - all statuses included
 const statusColors: Record<AppointmentStatus, { bg: string; text: string }> = {

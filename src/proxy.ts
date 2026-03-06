@@ -126,7 +126,7 @@ export async function proxy(request: NextRequest) {
 
     // 8. API routes CORS handling
     if (pathname.startsWith('/api') && !pathname.startsWith('/api/trpc')) {
-      return handleApiRequest(request, session, role);
+      return handleApiRequest(request, session);
     }
 
     // 9. Add user headers and continue
@@ -150,7 +150,7 @@ function isPublicRoute(pathname: string): boolean {
 
   // Prefix match for routes like /api/auth/*
   for (const route of publicRoutes) {
-    if (route !== '/' && pathname.startsWith(route + '/')) {
+    if (route !== '/' && pathname.startsWith(`${route}/`)) {
       return true;
     }
   }
@@ -258,8 +258,8 @@ function handleUnauthorized(request: NextRequest, role: UserRole, pathname: stri
   return NextResponse.redirect(dashboardUrl);
 }
 
-function handleApiRequest(request: NextRequest, session: Session, role: UserRole): NextResponse {
-  // Handle preflight
+// function handleApiRequest(request: NextRequest, session: Session, _role: UserRole): NextResponse {  // Handle preflight
+function handleApiRequest(request: NextRequest, session: Session): NextResponse {
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 204 });
     response.headers.set('Access-Control-Allow-Origin', '*');

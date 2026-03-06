@@ -1,9 +1,10 @@
 // packages/db/src/services/staff.service.ts
 
+import { generateRandomColor } from '@/utils/formDate';
+
 import { prisma } from '../client';
 import type { StaffCreateInput } from '../repositories/staff.repo';
 import * as staffRepo from '../repositories/staff.repo';
-import { generateRandomColor } from '../utils/index';
 
 export class StaffService {
   constructor(private readonly db = prisma) {}

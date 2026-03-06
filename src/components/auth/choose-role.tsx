@@ -1,13 +1,17 @@
 import { Baby, Calendar, FileText, HeartPulse, Stethoscope, User } from 'lucide-react';
+import { cacheLife } from 'next/cache';
 import Link from 'next/link';
-import type React from 'react';
 
-import { AuthFooter } from './auth-footer'; // Import the new component
+import { AuthFooter } from './auth-footer';
 import { DownloadAppButton } from './download-app-button';
 import { RoleCard } from './role-card';
 import { RegistrationRole, type RoleOption } from './types';
 
-const ChooseRole: React.FC = () => {
+// Export as named export to match page import
+export async function ChooseRole() {
+  'use cache'; // Cache the entire component
+  cacheLife('max'); // Cache indefinitely since content is static
+
   const roles: RoleOption[] = [
     {
       id: RegistrationRole.PATIENT,
@@ -91,9 +95,10 @@ const ChooseRole: React.FC = () => {
           </div>
         </div>
       </main>
-      <AuthFooter /> {/* Use the client component here */}
+      <AuthFooter />
     </div>
   );
-};
+}
 
+// Also export as default for backward compatibility if needed
 export default ChooseRole;

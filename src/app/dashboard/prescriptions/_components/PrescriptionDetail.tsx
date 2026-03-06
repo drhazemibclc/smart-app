@@ -4,8 +4,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { formatDate } from '@/utils/formDate';
 
-import { formatDateTime } from '../../../../server/db/utils';
 import type { PrescriptionWithRelations } from '../../../../types/prescription';
 import { PrescriptionStatusBadge } from './PrescriptionStatusBadge';
 
@@ -20,7 +20,7 @@ export function PrescriptionDetail({ prescription }: PrescriptionDetailProps) {
       <div className='flex items-start justify-between'>
         <div>
           <h2 className='font-semibold text-2xl'>Prescription #{prescription.id.slice(-8)}</h2>
-          <p className='text-muted-foreground'>Issued on {formatDateTime(prescription.issuedDate)}</p>
+          <p className='text-muted-foreground'>Issued on {formatDate(prescription.issuedDate)}</p>
         </div>
         <PrescriptionStatusBadge status={prescription.status} />
       </div>
@@ -89,7 +89,7 @@ export function PrescriptionDetail({ prescription }: PrescriptionDetailProps) {
           <Separator />
           <div>
             <h3 className='mb-2 font-semibold text-lg'>Validity</h3>
-            <p className='text-muted-foreground'>Valid until {formatDateTime(prescription.endDate)}</p>
+            <p className='text-muted-foreground'>Valid until {formatDate(prescription.endDate)}</p>
           </div>
         </>
       )}

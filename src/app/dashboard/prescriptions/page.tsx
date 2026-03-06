@@ -22,13 +22,21 @@ interface PrescriptionsPageProps {
   }>;
 }
 
-export default async function PrescriptionsPage({ searchParams }: PrescriptionsPageProps) {
-  const session = await getSession();
-  if (!session?.user?.clinic?.id) notFound();
-
-  const { status, page = '1', limit = '20', startDate, endDate } = await searchParams;
-
-  const clinicId = session.user.clinic.id;
+async function PrescriptionsContent({
+  clinicId,
+  status,
+  page,
+  limit,
+  startDate,
+  endDate
+}: {
+  clinicId: string;
+  status?: string;
+  page: string;
+  limit: string;
+  startDate?: string;
+  endDate?: string;
+}) {
   const currentPage = Number.parseInt(page, 10);
   const pageLimit = Number.parseInt(limit, 10);
   const offset = (currentPage - 1) * pageLimit;
@@ -84,6 +92,32 @@ export default async function PrescriptionsPage({ searchParams }: PrescriptionsP
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+async function PrescriptionsWrapper({ searchParams }: PrescriptionsPageProps) {
+  const session = await getSession();
+  if (!session?.user?.clinic?.id) notFound();
+
+  const { status, page = '1', limit = '20', startDate, endDate } = await searchParams;
+
+  return (
+    <PrescriptionsContent
+      clinicId={session.user.clinic.id}
+      endDate={endDate}
+      limit={limit}
+      page={page}
+      startDate={startDate}
+      status={status}
+    />
+  );
+}
+
+export default function PrescriptionsPage({ searchParams }: PrescriptionsPageProps) {
+  return (
+    <Suspense fallback={<div>Loading prescriptions...</div>}>
+      <PrescriptionsWrapper searchParams={searchParams} />
+    </Suspense>
   );
 }
 

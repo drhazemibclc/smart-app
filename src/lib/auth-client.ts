@@ -3,12 +3,7 @@
 // 1. Remove 'console' import as it's built-in; remove unused 'error' import
 import { sentinelClient } from '@better-auth/infra/client';
 import { passkeyClient } from '@better-auth/passkey/client';
-import {
-  adminClient,
-  customSessionClient,
-  inferAdditionalFields,
-  magicLinkClient
-} from 'better-auth/client/plugins';
+import { adminClient, customSessionClient, inferAdditionalFields, magicLinkClient } from 'better-auth/client/plugins';
 import type { AccessControl } from 'better-auth/plugins/access'; // Specific path is safer
 import { createAuthClient } from 'better-auth/react';
 
@@ -27,13 +22,13 @@ export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
 
   fetchOptions: {
-    onError: (ctx) => {
+    onError: ctx => {
       console.error('❌ Auth error:', ctx.error);
       if (ctx.error?.status === 401 && typeof window !== 'undefined') {
         window.location.href = '/login';
       }
     },
-    onSuccess: (ctx) => {
+    onSuccess: ctx => {
       console.log('✅ Auth request succeeded:', ctx.response?.url ?? 'unknown URL');
     }
   },
