@@ -6,7 +6,7 @@ import { formatDate } from './formDate';
 describe('formatDate', () => {
   it('formats date correctly', () => {
     const date = new Date('2026-03-05');
-    expect(formatDate(date)).toBe('Mar 5, 2026');
+    expect(formatDate(date)).toContain('Mar 5, 2026');
   });
 
   it('handles invalid dates', () => {

@@ -22,7 +22,7 @@ export const decimalSchema = z.instanceof(Decimal);
 export const workingDaySchema = z.object({
   day: z.enum(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']),
   startTime: z.string(),
-  closeTime: z.string()
+  endTime: z.string()
 });
 export type Day = z.infer<typeof workingDaySchema>;
 

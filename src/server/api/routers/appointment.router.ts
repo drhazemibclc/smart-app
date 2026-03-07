@@ -14,8 +14,10 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { onAppointmentUpdated } from '../../../actions/appointment.action';
 import {
   AllAppointmentsInputSchema,
+  AppointmentActionSchema,
   AppointmentDeleteSchema,
   AppointmentFilterSchema,
   AppointmentStatsInputSchema,
@@ -28,7 +30,8 @@ import {
   type UpdateAppointmentStatusInput
 } from '../../../zodSchemas';
 import { appointmentService } from '../../db/services';
-import { createTRPCRouter, protectedProcedure } from '..';
+import type { AppointmentStatus } from '../../db/types';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '..';
 
 export const appointmentRouter = createTRPCRouter({
   // ==================== QUERIES (READ) ====================
@@ -104,34 +107,74 @@ export const appointmentRouter = createTRPCRouter({
       );
     }),
 
-  /**
-   * Get single appointment by ID
-   * Service handles caching internally
-   */
-  // getById: protectedProcedure.input(AppointmentByIdSchema).query(async ({ ctx, input }) => {
-  //   const clinicId = ctx.session?.user?.clinic?.id;
-  //   if (!clinicId) {
-  //     throw new TRPCError({
-  //       code: 'UNAUTHORIZED',
-  //       message: 'Clinic ID not found'
-  //     });
-  //   }
+  appointmentAction: publicProcedure
+    .input(AppointmentActionSchema)
+    .mutation(async ({ input: { id, status, reason, notes }, ctx }) => {
+      try {
+        const updatedAppointment = await ctx.db.$transaction(async tx => {
+          // Update the appointment directly and return relevant fields for cache invalidation
+          const appointment = await tx.appointment.update({
+            where: { id },
+            data: {
+              status: status as AppointmentStatus,
+              reason: reason ?? undefined,
+              note: notes ?? undefined,
+              updatedAt: new Date()
+            },
+            select: {
+              id: true,
+              clinicId: true,
+              doctorId: true,
+              patientId: true,
+              status: true
+            }
+          });
 
-  //   try {
-  //     // Call service directly - caching is handled inside the service
-  //     return await appointmentService.getAppointmentById(input.id, clinicId);
-  //   } catch (error) {
-  //     throw new TRPCError({
-  //       code: 'INTERNAL_SERVER_ERROR',
-  //       message: error instanceof Error ? error.message : 'Failed to fetch appointment'
-  //     });
-  //   }
-  // }),
+          if (!appointment) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: 'Appointment not found'
+            });
+          }
 
-  /**
-   * Get today's appointments for clinic
-   * Service handles caching internally
-   */
+          // Cancel any pending reminders if appointment was cancelled
+          if (status === 'CANCELLED') {
+            await tx.reminder.updateMany({
+              where: {
+                appointmentId: id,
+                status: 'PENDING'
+              },
+              data: { status: 'FAILED' }
+            });
+          }
+
+          return appointment;
+        });
+
+        // Trigger cache invalidation / post-update hooks outside transaction
+        await onAppointmentUpdated(
+          updatedAppointment.clinicId,
+          updatedAppointment.id,
+          updatedAppointment.doctorId,
+          updatedAppointment.patientId,
+          { statusChanged: true }
+        );
+
+        return {
+          success: true,
+          message: `Appointment ${status.toLowerCase()} successfully`
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error(`[appointmentAction] Failed for appointment ${id}:`, error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update appointment status.',
+          cause: error
+        });
+      }
+    }),
+
   getToday: protectedProcedure.query(async ({ ctx }) => {
     const clinicId = ctx.session?.user?.clinic?.id;
     if (!clinicId) {
@@ -369,4 +412,95 @@ export const appointmentRouter = createTRPCRouter({
       });
     }
   })
+
+  // updateStatus: protectedProcedure
+  //   .input(
+  //     z.object({
+  //       id: z.string(),
+  //       status: AppointmentStatusSchema,
+  //       reason: z.string().optional(),
+  //     })
+  //   )
+  //   .mutation(async ({ input, ctx }) => {
+  //     const { id, status, reason } = input;
+  //     const userId = ctx.user.id;
+
+  //     // Check if appointment exists and user has access
+  //     const appointment = await ctx.db.appointment.findUnique({
+  //       where: { id },
+  //       select: {
+  //         doctorId: true,
+  //         patientId: true,
+  //       },
+  //     });
+
+  //     if (!appointment) {
+  //       throw new TRPCError({
+  //         code: 'NOT_FOUND',
+  //         message: 'Appointment not found',
+  //       });
+  //     }
+
+  //     // Check permissions (doctor can update, patient can only cancel)
+  //     const isDoctor = appointment.doctorId === userId;
+  //     const isPatient = appointment.patientId === userId;
+
+  //     if (!isDoctor && !isPatient) {
+  //       throw new TRPCError({
+  //         code: 'FORBIDDEN',
+  //         message: 'You do not have permission to update this appointment',
+  //       });
+  //     }
+
+  //     // Patients can only cancel appointments
+  //     if (isPatient && status !== 'CANCELLED') {
+  //       throw new TRPCError({
+  //         code: 'FORBIDDEN',
+  //         message: 'Patients can only cancel appointments',
+  //       });
+  //     }
+
+  //     // Update appointment
+  //     const updatedAppointment = await ctx.db.appointment.update({
+  //       where: { id },
+  //       data: {
+  //         status,
+  //         ...(reason && {
+  //           cancellationReason: reason,
+  //           cancelledAt: status === 'CANCELLED' ? new Date() : null,
+  //         }),
+  //         ...(status === 'SCHEDULED' && {
+  //           scheduledAt: new Date(),
+  //         }),
+  //         ...(status === 'COMPLETED' && {
+  //           completedAt: new Date(),
+  //         }),
+  //       },
+  //       include: {
+  //         doctor: {
+  //           select: {
+  //             name: true,
+  //             email: true,
+  //           },
+  //         },
+  //         patient: {
+  //           select: {
+  //             firstName: true,
+  //             lastName: true,
+  //             email: true,
+  //           },
+  //         },
+  //       },
+  //     });
+
+  //     // Revalidate paths
+  //     revalidatePath('/dashboard/appointments');
+  //     revalidatePath(`/dashboard/appointments/${id}`);
+
+  //     return {
+  //       success: true,
+  //       message: `Appointment ${status.toLowerCase()} successfully`,
+  //       appointment: updatedAppointment,
+  //     };
+  //   }),
 });

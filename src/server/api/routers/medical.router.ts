@@ -30,7 +30,65 @@ import { labTestService, medicalRecordService, prescriptionService, vitalService
 import type { LabStatus } from '../../db/types';
 import { createTRPCRouter, protectedProcedure } from '..';
 
+// Add a schema for listRecords
+const ListRecordsSchema = z.object({
+  limit: z.number().min(1).max(100).default(50),
+  page: z.number().min(1).default(1),
+  search: z.string().optional(),
+  patientId: z.string().uuid().optional(),
+  doctorId: z.string().uuid().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional()
+});
+
 export const medicalRouter = createTRPCRouter({
+  // ==================== LIST RECORDS PROCEDURE ====================
+
+  /**
+   * List medical records with pagination and filtering
+   * This matches what the frontend MedicalRecordsList component expects
+   */
+  listRecords: protectedProcedure.input(ListRecordsSchema).query(async ({ ctx, input }) => {
+    try {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!clinicId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found'
+        });
+      }
+
+      const limit = input.limit || 50;
+      const offset = ((input.page || 1) - 1) * limit;
+
+      const records = await medicalRecordService.getMedicalRecordsByClinic(clinicId, {
+        search: input.search,
+        limit,
+        offset,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        patientId: input.patientId,
+        doctorId: input.doctorId
+      });
+
+      const total = await medicalRecordService.countMedicalRecordsByClinic(clinicId, input.search);
+
+      return {
+        records,
+        total,
+        page: input.page || 1,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch medical records'
+      });
+    }
+  }),
+
   // ==================== DIAGNOSIS PROCEDURES ====================
 
   /**
@@ -64,7 +122,7 @@ export const medicalRouter = createTRPCRouter({
   getDiagnosesByPatient: protectedProcedure
     .input(
       z.object({
-        patientId: z.uuid(),
+        patientId: z.string().uuid(),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         type: DiagnosisFilterSchema.shape.type,
@@ -153,7 +211,7 @@ export const medicalRouter = createTRPCRouter({
   getDiagnosesByDoctor: protectedProcedure
     .input(
       z.object({
-        doctorId: z.uuid(),
+        doctorId: z.string().uuid(),
         limit: z.number().min(1).max(100).optional()
       })
     )
@@ -361,7 +419,7 @@ export const medicalRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getLatestVitalSignsByPatient: protectedProcedure
-    .input(z.object({ patientId: z.uuid() }))
+    .input(z.object({ patientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -876,7 +934,7 @@ export const medicalRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getActivePrescriptionsByPatient: protectedProcedure
-    .input(z.object({ patientId: z.uuid() }))
+    .input(z.object({ patientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;
@@ -904,7 +962,7 @@ export const medicalRouter = createTRPCRouter({
    * Service handles caching internally
    */
   getPatientMedicalSummary: protectedProcedure
-    .input(z.object({ patientId: z.uuid() }))
+    .input(z.object({ patientId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       try {
         const clinicId = ctx.session?.user?.clinic?.id;

@@ -577,7 +577,7 @@ export type Doctor = {
   type?: JOBTYPE;
   createdAt?: Date;
   updatedAt: Date;
-  appointmentPrice: Decimal;
+  appointmentPrice: Decimal | null;
   role?: UserRole | null;
   deletedAt?: Date | null;
   isDeleted?: boolean | null;

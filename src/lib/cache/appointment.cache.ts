@@ -17,6 +17,27 @@ import { CACHE_TAGS } from './utils/tags';
  * - Calls service layer
  */
 
+export async function getCachedTodaysAppointments(clinicId: string, doctorId?: string) {
+  'use cache';
+
+  cacheTag(CACHE_TAGS.appointment.today(clinicId));
+  if (doctorId) cacheTag(CACHE_TAGS.appointment.byDoctor(doctorId));
+  cacheLife(CACHE_PROFILES.realtime);
+
+  return appointmentService.getTodayAppointments(clinicId);
+}
+
+export async function getCachedDoctorSchedule(doctorId: string, date: Date, clinicId: string) {
+  'use cache';
+
+  cacheTag(CACHE_TAGS.doctor.schedule(doctorId));
+  cacheTag(CACHE_TAGS.appointment.byDoctor(doctorId));
+  cacheTag(CACHE_TAGS.appointment.byClinic(clinicId));
+  cacheLife(CACHE_PROFILES.realtime);
+
+  return appointmentService.getDoctorSchedule(doctorId, date);
+}
+
 export async function getCachedAppointments(
   clinicId: string,
   filter: {

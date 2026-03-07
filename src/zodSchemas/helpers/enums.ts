@@ -26,7 +26,7 @@ import {
   ServiceCategory,
   Status,
   UserRole
-} from '@/generated/prisma/browser';
+} from '@/prisma/types';
 
 // Role
 export const roleSchema = z.enum(UserRole);

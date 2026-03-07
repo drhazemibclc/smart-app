@@ -1,4 +1,4 @@
-import type { AppointmentStatus, Doctor, Patient, UserRole } from '@/prisma/types';
+import type { AppointmentStatus, Doctor, MedicalRecords, Patient, UserRole } from '@/prisma/types';
 
 // types/index.ts
 export interface StaffData {
@@ -89,6 +89,104 @@ export type AvailableDoctorProps = {
   workingDays: {
     day: string;
     startTime: string;
-    closeTime: string;
+    endTime: string;
   }[];
 }[];
+export type Weekday = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+export interface DashboardStats {
+  appointmentCounts: {
+    scheduled: number;
+    completed: number;
+    cancelled: number;
+    pending: number;
+  };
+  availableDoctors: number;
+  dailyAppointmentsData: Array<{
+    appointmentDate: Date;
+    appointments: number;
+    revenue: number;
+  }>;
+  last5Records: string[];
+  monthlyData: Array<{
+    name: string;
+    appointment: number;
+    completed: number;
+  }>;
+  services: number;
+  todayAppointments: Array<{
+    id: string;
+    time: Date;
+    patient: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+    } | null;
+    doctor: {
+      id: string;
+      name: string | null;
+    } | null;
+    status: string;
+  }>;
+  todayAppointmentsCount: number;
+  topDoctors: Array<{
+    id: string;
+    name: string;
+    img: string | null;
+    specialty: string | null;
+    rating: number;
+    appointments: number;
+  }>;
+  topSpecialties: Array<{
+    specialty: string;
+    count: number;
+  }>;
+  totalAppointments: number;
+  totalDoctors: number;
+  totalPatients: number;
+  totalRevenue: number;
+}
+
+export interface GeneralStats {
+  completedAppointments: number;
+  completionRate: number;
+  totalAppointments: number;
+  totalDoctors: number;
+  totalPatients: number;
+}
+
+export interface MedicalRecordsSummary {
+  currentMonthCount: number;
+  growth: number;
+  previousMonthCount: number;
+  recentRecords: MedicalRecords[];
+  totalRecords: number;
+}
+
+export interface MonthlyPerformance {
+  month: string;
+  revenue: number;
+  visits: number;
+}
+
+export interface PersonalizedGreeting {
+  childName: string | null;
+  message: string;
+}
+
+export interface AvailableDoctor {
+  id: string;
+  name: string;
+  specialty: string;
+  img: string | null;
+  colorCode: string | null;
+  workingDays: Array<{
+    day: string;
+    startTime: string;
+    endTime: string;
+  }>;
+  appointmentCount: number;
+}
+
+export interface AdminDashboardClientProps {
+  clinicId: string;
+}

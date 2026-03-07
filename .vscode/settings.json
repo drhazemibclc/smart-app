@@ -272,7 +272,7 @@
   "window.newWindowDimensions": "maximized",
   "window.restoreWindows": "all",
   "window.title": "${dirty}${activeEditorShort}${separator}${rootName}${separator}${profileName}",
-  "workbench.colorTheme": "Default Light Modern",
+  "workbench.colorTheme": "Kiro Light",
   "workbench.editor.closeOnFileDelete": true,
   "workbench.editor.enablePreview": true,
   "workbench.editor.enablePreviewFromQuickOpen": false,

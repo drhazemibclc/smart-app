@@ -50,9 +50,9 @@ export const authRouter = createTRPCRouter({
     }
 
     return {
-      role: getRole(session),
+      role: getRole(),
       user: session?.user,
-      permissions: await createServerRoleChecker(auth)(session)
+      permissions: await createServerRoleChecker(auth)()
     };
   }),
   getSession: publicProcedure.query(async ({ ctx }) => {
@@ -83,7 +83,7 @@ export const authRouter = createTRPCRouter({
 
     return {
       ...session?.user,
-      permissions: await createServerRoleChecker(auth)(session),
+      permissions: await createServerRoleChecker(auth)(),
 
       user,
       full_name: session?.user.name, // Map name to full_name if needed

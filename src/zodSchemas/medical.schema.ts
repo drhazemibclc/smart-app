@@ -73,14 +73,8 @@ export const LabTestBaseSchema = z.object({
   referenceRange: z.string().max(500).optional(),
   units: z.string().max(50).optional()
 });
-export const MedicalRecordByIdSchema = MedicalRecordBaseSchema.extend({
-  id: idSchema,
-  clinicId: clinicIdSchema,
-  limit: z.number().int().min(1).max(100).optional(),
-  page: z.number().int().min(1).default(1),
-  offset: z.number().int().min(0).default(0),
-  sortBy: z.enum(['createdAt', 'patientName', 'doctorName', 'followUpDate']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc')
+export const MedicalRecordByIdSchema = z.object({
+  id: idSchema
 });
 
 export const LabTestCreateSchema = LabTestBaseSchema;
@@ -88,14 +82,8 @@ export const LabTestCreateSchema = LabTestBaseSchema;
 export const LabTestUpdateSchema = LabTestBaseSchema.partial().extend({
   id: idSchema
 });
-export const LabTestByIdSchema = LabTestBaseSchema.extend({
-  id: idSchema,
-  clinicId: clinicIdSchema,
-  limit: z.number().int().min(1).max(100).optional(),
-  page: z.number().int().min(1).default(1),
-  offset: z.number().int().min(0).default(0),
-  sortBy: z.enum(['createdAt', 'patientName', 'doctorName', 'followUpDate']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc')
+export const LabTestByIdSchema = z.object({
+  id: idSchema
 });
 export const LabTestByMedicalRecordSchema = LabTestBaseSchema.extend({
   medicalId: idSchema,

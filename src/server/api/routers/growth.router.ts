@@ -547,7 +547,11 @@ export const growthRouter = createTRPCRouter({
         });
       }
 
-      const result = await growthService.createGrowthRecord(input);
+      const result = await growthService.createGrowthRecord({
+        ...input,
+        patientId: input.patientId as string,
+        clinicId
+      });
 
       return {
         success: true,

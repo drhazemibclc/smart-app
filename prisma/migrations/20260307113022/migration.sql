@@ -328,7 +328,7 @@ CREATE TABLE "doctors" (
     "type" "JOBTYPE" NOT NULL DEFAULT 'FULL',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "appointment_price" DECIMAL(10,2) NOT NULL,
+    "appointment_price" DECIMAL(10,2) DEFAULT 250,
     "role" "UserRole",
     "deletedAt" TIMESTAMP(3),
     "isDeleted" BOOLEAN DEFAULT false,
@@ -532,6 +532,14 @@ CREATE TABLE "Drug" (
     "name" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "genericName" TEXT,
+    "strength" TEXT,
+    "strengthUnit" TEXT,
+    "form" TEXT,
+    "category" TEXT,
+    "isAvailable" BOOLEAN,
+    "requiresPrescription" BOOLEAN,
+    "isControlled" BOOLEAN,
 
     CONSTRAINT "Drug_pkey" PRIMARY KEY ("id")
 );

@@ -344,7 +344,7 @@ export class AppointmentService {
 
     try {
       // 1. Get doctor schedule
-      const doctor = await doctorRepo.findDoctorWithSchedule(this.db, validatedDoctorId);
+      const doctor = await doctorRepo.findDoctorWithSchedule(this.db, validatedDoctorId, date);
 
       if (!doctor) {
         throw new NotFoundError('Doctor', validatedDoctorId);
@@ -846,6 +846,37 @@ export class AppointmentService {
       logger.error('Failed to check in patient', { error, id, userId });
       throw new AppError('Failed to check in patient', {
         code: 'PATIENT_CHECK_IN_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+
+  async getDoctorSchedule(doctorId: string, date: Date) {
+    try {
+      const doctor = await doctorRepo.findDoctorWithSchedule(this.db, doctorId, date);
+      if (!doctor) {
+        throw new AppError('Doctor not found', {
+          code: 'DOCTOR_NOT_FOUND',
+          statusCode: 404
+        });
+      }
+
+      return {
+        id: doctor.id,
+        name: doctor.name,
+        availableFromTime: doctor.availableFromTime,
+        availableToTime: doctor.availableToTime,
+        workingDays: doctor.workingDays?.map(wd => ({
+          day: wd.day,
+          startTime: wd.startTime,
+          endTime: wd.endTime
+        }))
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      logger.error('Failed to get doctor schedule', { error, doctorId });
+      throw new AppError('Failed to retrieve doctor schedule', {
+        code: 'SCHEDULE_FETCH_ERROR',
         statusCode: 500
       });
     }

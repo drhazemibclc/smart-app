@@ -1987,7 +1987,7 @@ With `partial: true`:
 export const UserInputSchema = z.object({
   id: z.number().int(),
   name: z.string(),
-  email: z.string().email()
+  email: z.email()
 }).strict().partial();
 ```
 
@@ -1997,7 +1997,7 @@ With `partial: false` (default):
 export const UserResultSchema = z.object({
   id: z.number().int(),
   name: z.string(),
-  email: z.string().email()
+  email: z.email()
 }).strict();
 ```
 
@@ -4293,7 +4293,7 @@ Result:
 ```ts
 export const UserSchema = z
   .object({
-    email: z.string().email().min(5),
+    email: z.email().min(5),
     // ...
   })
   .strict();
@@ -4951,7 +4951,7 @@ export const TagsCreateInputSchema = z.object({
 The generator automatically detects your Zod version:
 
 - **Zod v4**: Uses optimized base types like `z.email()`, `z.nanoid()`
-- **Zod v3**: Falls back to chaining methods like `z.string().email()` where supported, or `z.string()` for unsupported methods
+- **Zod v3**: Falls back to chaining methods like `z.email()` where supported, or `z.string()` for unsupported methods
 
 ## Complete Method Reference
 

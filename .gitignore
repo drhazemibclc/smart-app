@@ -12,6 +12,12 @@
 
 # testing
 /coverage
+/test-reports
+*.log
+
+# Postman
+.postman/collections/*.json
+!.postman/collections/.gitkeep
 !generated/
 src/generated/*
 # next.js

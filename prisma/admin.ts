@@ -1,18 +1,31 @@
 import 'dotenv/config';
 
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
 
+import { PrismaClient } from '../src/generated/prisma/client';
 import { generateId } from '../src/lib/id';
 import { logger } from '../src/lib/logger';
 import { auth } from '../src/server/auth';
-import { prisma } from '../src/server/db';
+
+// Initialize Prisma with proper adapter for this script
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({
+  adapter
+});
 
 async function seedAdmin() {
   const log = logger.child({ module: 'seed', action: 'create-admin' });
 
   log.info('🌱 Starting admin user, clinic, and doctor profile seed...');
 
-  const adminEmail = 'admin@prisma.com';
+  const adminEmail = "hazem032012@gmail.com";
   const adminPassword = 'HealthF26';
   const adminName = 'Dr. Hazem Ali';
   const adminPhone = '01003497579';
@@ -23,7 +36,9 @@ async function seedAdmin() {
     log.info('🧹 Cleaning up existing admin data...');
 
     const existingUser = await prisma.user.findUnique({
-      where: { email: adminEmail },
+      where: {
+        email: "hazem032012@gmail.com",
+      },
       include: {
         doctor: true,
         accounts: true,
@@ -81,7 +96,7 @@ async function seedAdmin() {
       // Try Better Auth first
       const signUpResult = await auth.api.createUser({
         body: {
-          email: adminEmail,
+          email: "hazem032012@gmail.com",
           password: adminPassword,
           name: adminName,
           role: 'admin',
@@ -186,9 +201,9 @@ async function seedAdmin() {
       },
       doctor: verification?.doctor
         ? {
-            id: verification.doctor.id,
-            specialty: verification.doctor.specialty
-          }
+          id: verification.doctor.id,
+          specialty: verification.doctor.specialty
+        }
         : null,
       clinics: verification?.clinicMembers.map(cm => ({
         id: cm.clinic.id,
@@ -203,9 +218,11 @@ async function seedAdmin() {
   } catch (err) {
     log.error('❌ Error during seeding', err as Error);
     await prisma.$disconnect();
+    await pool.end();
     process.exit(1);
   } finally {
     await prisma.$disconnect();
+    await pool.end();
     process.exit(0);
   }
 }

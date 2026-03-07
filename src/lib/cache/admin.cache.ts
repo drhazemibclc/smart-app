@@ -208,3 +208,14 @@ export async function getCachedRecentActivity(userId: string, clinicId: string, 
 
   return adminService.getRecentActivity(userId, clinicId, limit); // ✅ Service, not Query
 }
+
+export async function getCachedAvailableDoctors(clinicId: string, doctorId: string, day: string) {
+  'use cache';
+
+  cacheTag(CACHE_TAGS.doctor.workingDays(doctorId, day));
+  cacheTag(CACHE_TAGS.doctor.byClinic(clinicId));
+  cacheTag(CACHE_TAGS.appointment.today(clinicId));
+  cacheLife(CACHE_PROFILES.realtime); // Availability changes frequently
+
+  return adminService.getAvailableDoctors(clinicId, day);
+}

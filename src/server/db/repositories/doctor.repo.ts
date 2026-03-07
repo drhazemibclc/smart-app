@@ -296,12 +296,28 @@ export async function countAvailableDoctors(db: PrismaClient, clinicId: string, 
     }
   });
 }
-export async function findDoctorWithSchedule(db: PrismaClient | Prisma.TransactionClient, id: string) {
+export async function findDoctorWithSchedule(
+  db: PrismaClient | Prisma.TransactionClient,
+  doctorId: string,
+  date: Date
+) {
+  const day = date.toLocaleString('en-US', { weekday: 'long' });
+
   return db.doctor.findUnique({
-    where: { id },
+    where: { id: doctorId },
     select: {
-      // Assuming 'workingDays' is a related model in your schema.prisma
-      workingDays: true,
+      id: true,
+      name: true,
+      specialty: true,
+      appointmentPrice: true,
+      workingDays: {
+        where: {
+          day: {
+            equals: day,
+            mode: 'insensitive'
+          }
+        }
+      },
       availableFromTime: true,
       availableToTime: true
     }

@@ -319,7 +319,7 @@ model Doctor {
   type                 JOBTYPE             @default(FULL)
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
-  appointmentPrice     Decimal             @map("appointment_price") @db.Decimal(10, 2)
+  appointmentPrice     Decimal?       @default(250)  @map("appointment_price") @db.Decimal(10, 2)
   role                 UserRole?
   deletedAt            DateTime?
   isDeleted            Boolean?            @default(false)

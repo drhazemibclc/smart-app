@@ -1,5 +1,8 @@
-import type { PrismaClient } from '@/prisma/client';
+import type { PaymentMethod, PaymentStatus, PrismaClient } from '@/prisma/client';
 import type { Prisma } from '@/prisma/types';
+
+import { dedupeQuery } from '../../../lib/cache';
+import { db } from '../client';
 
 /**
  * 🔷 PAYMENT ADMIN REPOSITORY
@@ -581,3 +584,377 @@ export async function checkBillExists(db: PrismaClient | Prisma.TransactionClien
     }
   });
 }
+
+export const billingQueries = {
+  // Get payment by ID with full relations
+  getPaymentById: dedupeQuery(async (id: string) => {
+    return db.payment.findUnique({
+      where: { id, isDeleted: false },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true
+          }
+        },
+        appointment: {
+          include: {
+            doctor: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true
+              }
+            },
+            service: {
+              select: {
+                id: true,
+                serviceName: true,
+                price: true
+              }
+            }
+          }
+        },
+        bills: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                serviceName: true,
+                price: true
+              }
+            }
+          }
+        },
+        clinic: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            address: true
+          }
+        }
+      }
+    });
+  }),
+
+  // Get payments by patient
+  getPaymentsByPatient: dedupeQuery(
+    async (
+      patientId: string,
+      options?: {
+        limit?: number;
+        offset?: number;
+        status?: PaymentStatus;
+      }
+    ) => {
+      return db.payment.findMany({
+        where: {
+          patientId,
+          isDeleted: false,
+          ...(options?.status && { status: options.status })
+        },
+        include: {
+          appointment: {
+            include: {
+              doctor: {
+                select: { name: true }
+              },
+              service: {
+                select: { serviceName: true }
+              }
+            }
+          },
+          bills: {
+            include: {
+              service: {
+                select: { serviceName: true }
+              }
+            }
+          }
+        },
+        orderBy: { billDate: 'desc' },
+        take: options?.limit || 50,
+        skip: options?.offset || 0
+      });
+    }
+  ),
+
+  // Get payments by clinic (for dashboard)
+  getPaymentsByClinic: dedupeQuery(
+    async (
+      clinicId: string,
+      options?: {
+        limit?: number;
+        offset?: number;
+        startDate?: Date;
+        endDate?: Date;
+        status?: PaymentStatus;
+      }
+    ) => {
+      return db.payment.findMany({
+        where: {
+          clinicId,
+          isDeleted: false,
+          ...(options?.startDate && { billDate: { gte: options.startDate } }),
+          ...(options?.endDate && { billDate: { lte: options.endDate } }),
+          ...(options?.status && { status: options.status })
+        },
+        include: {
+          patient: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          appointment: {
+            include: {
+              doctor: {
+                select: { name: true }
+              }
+            }
+          }
+        },
+        orderBy: { billDate: 'desc' },
+        take: options?.limit || 100,
+        skip: options?.offset || 0
+      });
+    }
+  ),
+
+  // Get payment statistics
+  getPaymentStats: dedupeQuery(async (clinicId: string, startDate: Date, endDate: Date) => {
+    const [totalRevenue, pendingPayments, paidPayments, byStatus] = await db.$transaction([
+      // Total revenue in period
+      db.payment.aggregate({
+        where: {
+          clinicId,
+          isDeleted: false,
+          billDate: { gte: startDate, lte: endDate },
+          status: 'PAID'
+        },
+        _sum: { amount: true }
+      }),
+
+      // Pending payments
+      db.payment.aggregate({
+        where: {
+          clinicId,
+          isDeleted: false,
+          status: { in: ['UNPAID', 'PARTIAL'] }
+        },
+        _sum: { amount: true }
+      }),
+
+      // Paid payments count
+      db.payment.count({
+        where: {
+          clinicId,
+          isDeleted: false,
+          status: 'PAID',
+          billDate: { gte: startDate, lte: endDate }
+        }
+      }),
+
+      // Group by status
+      db.payment.groupBy({
+        by: ['status'],
+        where: {
+          clinicId,
+          isDeleted: false,
+          billDate: { gte: startDate, lte: endDate }
+        },
+        _count: true,
+        _sum: { amount: true },
+        orderBy: undefined
+      })
+    ]);
+
+    return {
+      totalRevenue: totalRevenue._sum.amount || 0,
+      pendingAmount: pendingPayments._sum.amount || 0,
+      paidCount: paidPayments,
+      byStatus
+    };
+  }),
+
+  // Get overdue payments
+  getOverduePayments: dedupeQuery(async (clinicId: string) => {
+    const today = new Date();
+
+    return db.payment.findMany({
+      where: {
+        clinicId,
+        isDeleted: false,
+        status: { in: ['UNPAID', 'PARTIAL'] },
+        dueDate: { lt: today }
+      },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true
+          }
+        },
+        appointment: {
+          include: {
+            doctor: {
+              select: { name: true }
+            }
+          }
+        }
+      },
+      orderBy: { dueDate: 'asc' }
+    });
+  }),
+  // Explicitly type 'months' as a number
+  // biome-ignore lint/style/noInferrableTypes: TS loses inference through dedupeQuery
+  getMonthlyRevenue: dedupeQuery(async (clinicId: string, months: number = 12) => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+
+    const payments = await db.payment.findMany({
+      where: {
+        clinicId,
+        isDeleted: false,
+        status: 'PAID',
+        paymentDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      select: {
+        amount: true,
+        paymentDate: true,
+        paymentMethod: true
+      },
+      orderBy: { paymentDate: 'asc' }
+    });
+
+    return payments;
+  }),
+
+  // Create payment
+  createPayment: dedupeQuery(
+    async (data: {
+      clinicId: string;
+      patientId: string;
+      appointmentId: string;
+      amount: number;
+      discount?: number;
+      paymentMethod: PaymentMethod;
+      status: PaymentStatus;
+      notes?: string;
+      dueDate?: Date;
+      bills: Array<{
+        serviceId: string;
+        quantity: number;
+        unitCost: number;
+        totalCost: number;
+        serviceDate: Date;
+      }>;
+    }) => {
+      return db.$transaction(async tx => {
+        // Create payment
+        const payment = await tx.payment.create({
+          data: {
+            clinicId: data.clinicId,
+            patientId: data.patientId,
+            appointmentId: data.appointmentId,
+            amount: data.amount,
+            discount: data.discount || 0,
+            paymentMethod: data.paymentMethod,
+            status: data.status,
+            notes: data.notes,
+            dueDate: data.dueDate,
+            billDate: new Date(),
+            paymentDate: data.status === 'PAID' ? new Date() : null,
+            paidDate: data.status === 'PAID' ? new Date() : null,
+            totalAmount: data.amount,
+            amountPaid: data.status === 'PAID' ? data.amount : 0
+          }
+        });
+
+        // Create bill items
+        if (data.bills.length > 0) {
+          await tx.patientBill.createMany({
+            data: data.bills.map(bill => ({
+              billId: payment.id,
+              serviceId: bill.serviceId,
+              quantity: bill.quantity,
+              unitCost: bill.unitCost,
+              totalCost: bill.totalCost,
+              serviceDate: bill.serviceDate
+            }))
+          });
+        }
+
+        return payment;
+      });
+    }
+  ),
+
+  // Update payment
+  updatePayment: dedupeQuery(
+    async (
+      id: string,
+      data: {
+        amount?: number;
+        discount?: number;
+        paymentMethod?: PaymentMethod;
+        status?: PaymentStatus;
+        notes?: string;
+        paidDate?: Date | null;
+      }
+    ) => {
+      return db.payment.update({
+        where: { id },
+        data: {
+          ...data,
+          paymentDate: data.status === 'PAID' ? new Date() : null,
+          amountPaid: data.status === 'PAID' ? data.amount : 0,
+          updatedAt: new Date()
+        }
+      });
+    }
+  ),
+
+  // Soft delete payment
+  deletePayment: dedupeQuery(async (id: string) => {
+    return db.payment.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date()
+      }
+    });
+  }),
+
+  // Get all services for dropdown
+  getServices: dedupeQuery(async (clinicId: string) => {
+    return db.service.findMany({
+      where: {
+        clinicId,
+        isDeleted: false,
+        isAvailable: true
+      },
+      select: {
+        id: true,
+        serviceName: true,
+        price: true,
+        category: true,
+        duration: true
+      },
+      orderBy: { serviceName: 'asc' }
+    });
+  })
+};

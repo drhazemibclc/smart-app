@@ -83,10 +83,10 @@ export async function getCachedPatientCount(clinicId: string) {
   return patientService.getPatientCount(clinicId);
 }
 
-export async function getCachedAvailableDoctors(day: string, clinicId: string) {
+export async function getCachedAvailableDoctors(day: string, doctorId: string, clinicId: string) {
   'use cache';
 
-  cacheTag(CACHE_TAGS.doctor.workingDays(day));
+  cacheTag(CACHE_TAGS.doctor.workingDays(doctorId, day));
   cacheTag(CACHE_TAGS.doctor.byClinic(clinicId));
   cacheLife(CACHE_PROFILES.realtime); // Availability changes frequently
 
