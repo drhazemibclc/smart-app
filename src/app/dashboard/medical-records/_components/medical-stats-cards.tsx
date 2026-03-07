@@ -20,7 +20,7 @@ interface StatItem {
 }
 
 export function MedicalStatsCards({ clinicId }: MedicalStatsCardsProps) {
-  const Id = useId();
+  const _Id = useId();
 
   const { data: summary, isLoading } = useQuery({
     ...trpc.clinic.getMedicalRecordsSummary.queryOptions({ clinicId }),
@@ -30,8 +30,10 @@ export function MedicalStatsCards({ clinicId }: MedicalStatsCardsProps) {
   if (isLoading) {
     return (
       <div className='grid gap-4 md:grid-cols-4'>
-        {[...Array(4)].map(_ => (
-          <Card key={Id}>
+        {[...Array(4)].map((_, index) => (
+          <Card key={`stats-skeleton-${index}`}>
+            {' '}
+            {/* ✅ Unique key with index */}
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
               <Skeleton className='h-4 w-24' />
               <Skeleton className='h-4 w-4' />

@@ -64,6 +64,11 @@ export async function createDoctorAction(input: unknown) {
       ...validated,
       appointmentPrice: toNumber(validated.appointmentPrice),
       clinicId: validated.clinicId,
+      phone: validated.phone ?? '',
+      address: validated.address ?? '',
+      department: validated.department ?? '',
+      licenseNumber: validated.licenseNumber ?? '',
+      specialty: validated.specialty ?? '',
       type: 'FULL'
     },
     session.user.id

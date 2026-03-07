@@ -28,6 +28,32 @@ import { createTRPCRouter, protectedProcedure } from '..';
 
 export const doctorRouter = createTRPCRouter({
   // ==================== QUERIES ====================
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    const clinicId = ctx.session.user.clinic?.id;
+
+    if (!clinicId) {
+      throw new Error('No clinic found');
+    }
+
+    const doctors = await ctx.db.doctor.findMany({
+      where: {
+        clinicId,
+        isDeleted: false
+      },
+      include: {
+        _count: {
+          select: {
+            appointments: true
+          }
+        }
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    return { doctors };
+  }),
 
   /**
    * Get list of all doctors in clinic

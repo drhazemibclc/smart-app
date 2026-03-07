@@ -217,7 +217,7 @@ export const paymentsRouter = createTRPCRouter({
       });
     }
 
-    return billingService.getPaymentsByPatient(input.patientId,   input);
+    return billingService.getPaymentsByPatient(input.patientId, input);
   }),
 
   getByClinic: protectedProcedure.input(GetPaymentsSchema.omit({ patientId: true })).query(async ({ ctx, input }) => {

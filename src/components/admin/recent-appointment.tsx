@@ -12,22 +12,22 @@ import { Table } from './table';
 
 export interface Appointment {
   id: string;
-  patientId: string | null;
-  doctorId: string;
-  serviceId: string | null;
-  doctorSpecialty: string | null;
+  patientId?: string | null;
+  doctorId?: string;
+  serviceId?: string | null;
+  doctorSpecialty?: string | null;
   appointmentDate: Date;
-  appointmentPrice: Decimal | null;
+  appointmentPrice?: Decimal | null;
   time: string | null;
   status: AppointmentStatus | null;
-  type: string | null;
-  note: string | null;
-  reason: string | null;
-  clinicId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-  isDeleted: boolean | null;
+  type?: string | null;
+  note?: string | null;
+  reason?: string | null;
+  clinicId?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  deletedAt?: Date | null;
+  isDeleted?: boolean | null;
   // Optional populated fields
   patient?: {
     id: string;

@@ -37,7 +37,7 @@ export const ClinicStatsSchema = z.object({
 export const ClinicUpdateSchema = z.object({
   id: z.uuid(),
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
-  email: z.string().email('Invalid email format').optional().nullable(),
+  email: z.email('Invalid email format').optional().nullable(),
   phone: z.string().min(5, 'Invalid phone number').optional().nullable(),
   address: z.string().optional().nullable(),
   timezone: z.string().optional(),
@@ -72,7 +72,7 @@ export const clinicGetOneSchema = z.object({
 
 export const clinicCreateSchema = z.object({
   name: z.string().min(1, 'Clinic name is required'),
-  email: z.string().email().optional(), // Fixed typo from 'emai'
+  email: z.email().optional(), // Fixed typo from 'emai'
   address: z.string().optional(),
   phone: z.string().optional(),
   logo: z.string().url().optional()

@@ -49,7 +49,7 @@ async function PrescriptionDetailContent({
         <PrescriptionActions
           canEdit={canEdit}
           canPrint={canPrint}
-          prescription={prescription}
+          prescription={prescription as unknown as Prescription}
         />
       </div>
 

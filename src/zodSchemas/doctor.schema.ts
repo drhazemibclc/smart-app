@@ -5,6 +5,12 @@ import { UserRole } from '@/prisma/types';
 import { NullableDecimal } from './helpers';
 import { availabilityStatusSchema, decimalSchema, jobTypeSchema, statusSchema } from './helpers/enums';
 
+export const workingDaySchema = z.object({
+  day: z.enum(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']),
+  startTime: z.string(),
+  endTime: z.string()
+});
+
 const userRoleSchema = z.enum(UserRole);
 // Doctor schemas
 export const CreateDoctorSchema = z.object({
@@ -12,15 +18,16 @@ export const CreateDoctorSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   specialty: z.string().min(1, 'Specialty is required'),
   email: z.email('Invalid email address'),
-  address: z.string(),
-  licenseNumber: z.string(),
+  address: z.string().optional(),
+  licenseNumber: z.string().optional(),
   type: jobTypeSchema,
-  department: z.string(),
+  department: z.string().optional(),
   isActive: z.boolean().optional().default(true),
   appointmentPrice: NullableDecimal.optional(),
-  phone: z.string(),
+  phone: z.string().optional(),
   img: z.string().optional(),
   colorCode: z.string().optional(),
+  workingDays: z.array(workingDaySchema).optional(), // or .default([])
   availableFromTime: z.string(),
   availableToTime: z.string(),
   availableFromWeekDay: z.number().min(0).max(6),
@@ -47,11 +54,6 @@ export type DoctorListInput = z.infer<typeof DoctorListSchema>;
 export type DoctorByIdInput = z.infer<typeof DoctorByIdSchema>;
 // --- 1. Define Update Schema ---
 
-export const workingDaySchema = z.object({
-  day: z.enum(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']),
-  startTime: z.string(),
-  endTime: z.string()
-});
 const MAGIC_8_6 = 8;
 const MAGIC_2_0 = 2;
 const MAGIC_50_2 = 50;
@@ -89,6 +91,7 @@ export const CreateNewDoctorInputSchema = z.object({
   appointmentPrice: decimalSchema.optional(),
   department: z.string().min(MAGIC_2_0, 'Department is required.'),
   img: z.string().optional(),
+  isActive: z.boolean().default(true).optional(),
   password: z
     .string()
     .min(MAGIC_8_6, {

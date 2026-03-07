@@ -402,7 +402,7 @@ export class AdminService {
       // Calculate average wait time from recent appointments
       const recentAppointments = await appointmentRepo.findRecentAppointments(this.db, validatedClinicId, 10, 0);
       const waitTimes = recentAppointments
-        .map((apt: Appointment) => (apt as typeof apt & { waitTime?: number | null }).waitTime)
+        .map(apt => (apt as unknown as { waitTime?: number | null }).waitTime)
         .filter((time: number | null | undefined): time is number => time !== null && time !== undefined);
 
       const averageWaitTime =

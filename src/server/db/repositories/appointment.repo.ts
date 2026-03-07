@@ -20,6 +20,32 @@ export async function findRecentAppointments(db: PrismaClient, clinicId: string,
   today.setHours(0, 0, 0, 0);
   return db.appointment.findMany({
     where: { clinicId, isDeleted: false, appointmentDate: { gte: today } },
+    select: {
+      id: true,
+      appointmentDate: true,
+      status: true,
+      appointmentPrice: true,
+      time: true,
+      patient: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          image: true,
+          colorCode: true
+        }
+      },
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          specialty: true,
+          img: true,
+          colorCode: true
+        }
+      }
+    },
     orderBy: { appointmentDate: 'desc' },
     take: limit,
     skip: offset

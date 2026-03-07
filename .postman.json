@@ -1,0 +1,54 @@
+{
+  "workspaceId": "pediatric-clinic-workspace",
+  "collectionId": "pediatric-clinic-medical",
+  "environmentId": "local-environment",
+  "apiKey": "${POSTMAN_API_KEY}",
+  "settings": {
+    "autoRunOnChanges": true,
+    "notifyOnFailure": true,
+    "timeout": 30000,
+    "retryOnFailure": 3,
+    "delayBetweenTests": 1000,
+    "stopOnError": false
+  },
+  "testSuites": {
+    "medicalRecords": {
+      "collection": "pediatric-clinic-medical",
+      "environment": "local",
+      "folder": "Medical Records",
+      "tests": [
+        ".postman/tests/medical-records.test.js"
+      ],
+      "setup": [
+        "Create Test Patient",
+        "Create Medical Record"
+      ],
+      "cleanup": [
+        "Delete Test Data"
+      ]
+    },
+    "regression": {
+      "collection": "pediatric-clinic-medical",
+      "environment": "local",
+      "runAll": true
+    }
+  },
+  "reporting": {
+    "enabled": true,
+    "format": ["html", "json", "junit"],
+    "outputDir": "./test-reports",
+    "includeTests": true,
+    "includeLogs": true
+  },
+  "notifications": {
+    "slack": {
+      "webhook": "https://hooks.slack.com/services/xxx/yyy/zzz",
+      "onSuccess": false,
+      "onFailure": true
+    },
+    "email": {
+      "recipients": ["dev-team@pediatricclinic.com"],
+      "onFailure": true
+    }
+  }
+}

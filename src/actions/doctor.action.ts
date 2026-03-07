@@ -6,6 +6,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { getSession } from '@/lib/auth-server';
 import { CreateDoctorSchema, DeleteDoctorSchema } from '@/zodSchemas/doctor.schema';
 
+import { db } from '../server/db';
 import { doctorService } from '../server/db/services';
 
 /**
@@ -40,23 +41,50 @@ export async function upsertDoctorAction(input: unknown) {
 }
 
 export async function deleteDoctorAction(input: unknown) {
-  // 1. Auth
-  const session = await getSession();
-  if (!session?.user?.clinic?.id) {
-    throw new Error('Unauthorized: No clinic access');
+  try {
+    // 1. Auth
+    const session = await getSession();
+    const clinicId = session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new Error('Unauthorized: No clinic access');
+    }
+
+    const validated = DeleteDoctorSchema.parse(input);
+
+    const doctor = await db.doctor.findFirst({
+      where: {
+        id: validated.id,
+        clinicId,
+        isDeleted: false
+      }
+    });
+
+    if (!doctor) {
+      throw new Error('Doctor not found');
+    }
+
+    // Soft delete the doctor
+    await db.doctor.update({
+      where: { id: validated.id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        isActive: false
+      }
+    });
+
+    // 3. Delegate to service
+    const result = await doctorService.deleteDoctor(validated.id, clinicId, session.user.id);
+
+    // 4. UI revalidation
+    revalidatePath('/dashboard/doctors');
+    revalidatePath('/dashboard/admin');
+
+    return { result, success: true };
+  } catch (error) {
+    console.error('Error deleting doctor:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to delete doctor');
   }
-
-  // 2. Validation
-  const validated = DeleteDoctorSchema.parse(input);
-
-  // 3. Delegate to service
-  const result = await doctorService.deleteDoctor(validated.id, session.user.clinic.id, session.user.id);
-
-  // 4. UI revalidation
-  revalidatePath('/dashboard/doctors');
-  revalidatePath('/dashboard/admin');
-
-  return result;
 }
 
 export async function getDoctorByIdAction(id: string) {

@@ -27,7 +27,16 @@ export function RevenueChart({ data }: RevenueChartProps) {
           <XAxis dataKey='month' />
           <YAxis tickFormatter={value => formatCurrency(value)} />
           <Tooltip
-            formatter={(value: number | undefined) => (value !== undefined ? formatCurrency(value) : '0')}
+            formatter={(value: unknown) => {
+              if (typeof value === 'number') {
+                return formatCurrency(value);
+              }
+              if (typeof value === 'string') {
+                const numValue = Number.parseFloat(value);
+                return !Number.isNaN(numValue) ? formatCurrency(numValue) : '0';
+              }
+              return '0';
+            }}
             labelStyle={{ color: 'black' }}
           />
           <Legend />

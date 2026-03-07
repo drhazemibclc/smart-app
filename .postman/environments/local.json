@@ -1,0 +1,67 @@
+{
+  "id": "local-environment",
+  "name": "Local Development",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "apiUrl",
+      "value": "http://localhost:3000/api/trpc",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "patientId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "doctorId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "medicalRecordId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "appointmentId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "visitId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "prescriptionId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

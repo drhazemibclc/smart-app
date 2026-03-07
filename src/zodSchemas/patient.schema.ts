@@ -210,7 +210,7 @@ export const PatientSchema = z.object({
   gender: GenderEnum,
 
   // Contact Information
-  email: z.string().email('Invalid email address').optional().nullable(),
+  email: z.email('Invalid email address').optional().nullable(),
   phone: z
     .string()
     .regex(/^\+?[0-9]{10,15}$/, 'Invalid phone number')

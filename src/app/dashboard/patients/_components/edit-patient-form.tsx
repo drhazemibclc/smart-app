@@ -22,7 +22,7 @@ const patientFormSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['MALE', 'FEMALE']),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  email: z.email('Invalid email').optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
   emergencyContactName: z.string().optional(),

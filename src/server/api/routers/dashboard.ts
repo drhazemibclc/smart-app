@@ -17,10 +17,18 @@ export const dashboardRouter = createTRPCRouter({
   /**
    * Get dashboard statistics
    */
-  getStats: protectedProcedure.input(getStatsSchema).query(async ({ input }) => {
+  getStats: protectedProcedure.input(getStatsSchema).query(async ({ ctx }) => {
     try {
+      const clinicId = ctx.session?.user?.clinic?.id || ctx.session?.user?.clinic?.id;
+
+      if (!clinicId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found in session'
+        });
+      }
       // ✅ All complex trend logic and Prisma queries moved to Service
-      return await adminService.getAdminDashboardStats(input.clinicId);
+      return await adminService.getAdminDashboardStats(clinicId);
     } catch (error) {
       console.error('Error in getStats:', error);
       throw new TRPCError({

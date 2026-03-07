@@ -1,10 +1,7 @@
-import { useId } from 'react';
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function PatientListSkeleton() {
-  const Id = useId();
   return (
     <Card>
       <CardContent className='p-6'>
@@ -17,10 +14,10 @@ export function PatientListSkeleton() {
         </div>
 
         <div className='space-y-3'>
-          {Array.from({ length: 5 }).map(_ => (
+          {Array.from({ length: 5 }).map((_, index) => (
             <div
-              className='flex items-center gap-4 rounded-lg border p-4'
-              key={Id}
+              className='flex items-center gap-4 rounded-lg border p-4' // Simple index key
+              key={`skeleton-${index}`}
             >
               <Skeleton className='h-12 w-12 rounded-full' />
               <div className='flex-1 space-y-2'>

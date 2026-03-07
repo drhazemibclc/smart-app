@@ -10,62 +10,43 @@ import { StatCard } from '@/components/admin/stat-card';
 import { AppointmentChart } from '@/components/charts/appointment-chart';
 import { StatSummary } from '@/components/charts/stat-summary';
 import { Button } from '@/components/ui/button';
-import type { AdminDashboardStats } from '@/server/db/services/admin.service';
-import type { AppointmentsChartProps } from '@/types/data-types';
+import type { AdminDashboardClientProps } from '@/types/data-types';
 import { trpc } from '@/utils/trpc';
 
-interface AvailableDoctor {
-  id: string;
-  name: string;
-  specialty: string;
-  img: string | null;
-  colorCode: string | null;
-  workingDays: { day: string; startTime: string; endTime: string }[];
-  appointmentCount: number;
-}
+export function AdminDashboardClient({ clinicId }: AdminDashboardClientProps) {
+  // Fetch fresh data from tRPC (prefetched on server via HydrationBoundary)
+  const { data: stats } = useQuery(trpc.admin.getDashboardStats.queryOptions());
 
-interface AdminDashboardClientProps {
-  clinicId: string;
-  initialData: {
-    dashboardStats: AdminDashboardStats;
-    availableDoctors: AvailableDoctor[];
-  };
-}
-
-export function AdminDashboardClient({ clinicId, initialData }: AdminDashboardClientProps) {
-  // Use initialData for instant hydration, then tRPC keeps it fresh
-  const { data: stats } = useQuery({
-    ...trpc.admin.getDashboardStats.queryOptions(),
-    initialData: initialData.dashboardStats
-  });
-
-  const { data: availableDoctors } = useQuery({
-    ...trpc.admin.getAvailableDoctors.queryOptions({
+  const { data: availableDoctors } = useQuery(
+    trpc.admin.getAvailableDoctors.queryOptions({
       clinicId,
       day: new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase()
-    }),
-    initialData: initialData.availableDoctors
+    })
+  );
+
+  const { data: appointmentStatus } = useQuery({
+    ...trpc.admin.getAppointmentStatus.queryOptions({ clinicId, days: 30 }),
+    enabled: !!clinicId
   });
 
-  const { data: appointmentStatus } = useQuery(trpc.admin.getAppointmentStatus.queryOptions({ clinicId, days: 30 }));
+  // Transform appointmentStatus for the chart with safe access
+  const chartData = (() => {
+    if (!appointmentStatus || !('breakdown' in appointmentStatus)) return [];
 
-  // Transform appointmentStatus for the chart
-  const chartData: AppointmentsChartProps =
-    (
-      appointmentStatus as { total: number; breakdown: { status: string; count: number }[] } | undefined
-    )?.breakdown?.map(item => ({
-      name: item.status,
+    return (appointmentStatus.breakdown as { status: string; count: number }[]).map(item => ({
+      name: item.status as string,
       appointment: item.count,
       completed: item.status === 'COMPLETED' ? item.count : 0
-    })) ?? [];
+    }));
+  })();
 
   const {
-    totalPatients,
-    totalDoctors,
-    todayAppointments,
-    completedAppointments,
-    upcomingAppointments,
-    cancelledAppointments
+    totalPatients = 0,
+    totalDoctors = 0,
+    todayAppointments = 0,
+    completedAppointments = 0,
+    upcomingAppointments = 0,
+    cancelledAppointments = 0
   } = stats || {};
 
   const cardData = [
@@ -98,7 +79,7 @@ export function AdminDashboardClient({ clinicId, initialData }: AdminDashboardCl
     },
     {
       title: 'Completed',
-      value: completedAppointments || 0,
+      value: completedAppointments,
       icon: BriefcaseMedical,
       className: 'bg-emerald-600/15',
       iconClassName: 'bg-emerald-600/25 text-emerald-600',
@@ -108,9 +89,9 @@ export function AdminDashboardClient({ clinicId, initialData }: AdminDashboardCl
   ];
 
   const appointmentCounts = {
-    SCHEDULED: upcomingAppointments || 0,
-    COMPLETED: completedAppointments || 0,
-    CANCELLED: cancelledAppointments || 0
+    SCHEDULED: upcomingAppointments,
+    COMPLETED: completedAppointments,
+    CANCELLED: cancelledAppointments
   };
 
   return (
@@ -158,7 +139,7 @@ export function AdminDashboardClient({ clinicId, initialData }: AdminDashboardCl
         <div className='h-112.5 w-full'>
           <StatSummary
             data={appointmentCounts}
-            total={todayAppointments || 0}
+            total={todayAppointments}
           />
         </div>
 

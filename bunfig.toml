@@ -13,6 +13,8 @@ telemetry = false
 # when a .bagel file is imported, treat it like a tsx file
 ".bagel" = "tsx"
 
+[test]
+preload = ["./setup-tests.ts"]
 
 # --- Package Manager ---
 [install]

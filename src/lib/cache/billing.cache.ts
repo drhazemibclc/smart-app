@@ -33,7 +33,7 @@ export async function getCachedPaymentsByPatient(
   cacheTag(CACHE_TAGS.clinic.billing(clinicId));
   cacheLife(CACHE_PROFILES.medicalShort);
 
-  return billingService.getPaymentsByPatient(patientId,  options);
+  return billingService.getPaymentsByPatient(patientId, options);
 }
 
 export async function getCachedPaymentStats(clinicId: string, startDate: Date, endDate: Date) {
