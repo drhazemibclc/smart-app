@@ -1,7 +1,7 @@
 // src/modules/patient/patient.actions.ts
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 import { getSession } from '@/lib/auth-server';
 
@@ -98,4 +98,124 @@ export async function upsertPatientAction(input: unknown) {
   revalidatePath('/dashboard/patients');
 
   return { success: true, data: patient };
+}
+
+export async function onPatientStatusChanged(patientId: string, clinicId: string, newStatus: string) {
+  await invalidatePatientCascade(patientId, clinicId, {
+    includeAppointments: newStatus !== 'ACTIVE',
+    includeFinancial: true
+  });
+
+  if (newStatus !== 'ACTIVE') {
+    revalidateTag(`patients_clinic_active_idx-${clinicId}`, 'max');
+  }
+}
+
+export async function invalidatePatientCascade(
+  patientId: string,
+  clinicId: string,
+  options?: {
+    includeAppointments?: boolean;
+    includeFinancial?: boolean;
+    includeGuardians?: boolean;
+  }
+) {
+  const opts = {
+    includeAppointments: true,
+    includeFinancial: true,
+    includeGuardians: true,
+    ...options
+  };
+
+  // Patient data caches
+  revalidateTag(`patient-overview-${patientId}`, 'max');
+  revalidateTag(`patient-growth-${patientId}`, 'max');
+  revalidateTag(`medical_records_patient_date_idx-${patientId}`, 'max');
+  revalidateTag(`encounters_patient_timeline_idx-${patientId}`, 'max');
+  revalidateTag(`immunizations_patient_schedule_idx-${patientId}`, 'max');
+  revalidateTag(`vital_signs_patient_timeline_idx-${patientId}`, 'max');
+  revalidateTag(`growth_records_patient_chart_idx-${patientId}`, 'max');
+  revalidateTag(`feeding_logs_patient_daily_idx-${patientId}`, 'max');
+  revalidateTag(`lab_tests_patient_date_idx-${patientId}`, 'max');
+  revalidateTag(`developmental_checks_patient_timeline_idx-${patientId}`, 'max');
+
+  // Related entities
+  if (opts.includeGuardians) {
+    revalidateTag(`patient_guardians_patient_primary_idx-${patientId}`, 'max');
+  }
+
+  // Clinic-level caches
+  revalidateTag(`patients_clinic_active_idx-${clinicId}`, 'max');
+  revalidateTag(`recent-patients-${clinicId}`, 'max');
+
+  if (opts.includeAppointments) {
+    revalidateTag(`appointments_patient_date_idx-${patientId}`, 'max');
+    revalidateTag(`today-appointments-${clinicId}`, 'max');
+  }
+
+  if (opts.includeFinancial) {
+    revalidateTag(`billing_transactions_patient_status_idx-${patientId}`, 'max');
+    revalidateTag(`payments_patient_status_idx-${patientId}`, 'max');
+    revalidateTag(`financial-overview-${clinicId}`, 'max');
+  }
+
+  // Search and listing caches
+  revalidateTag(`patients_lookup_idx-${clinicId}`, 'max');
+  revalidateTag(`patients_name_search_idx-${clinicId}`, 'max');
+}
+
+export async function invalidatePatientSearchCascade(clinicId: string, patientId?: string) {
+  revalidateTag(`patients_lookup_idx-${clinicId}`, 'max');
+  revalidateTag(`patients_name_search_idx-${clinicId}`, 'max');
+
+  if (patientId) {
+    // Clear specific patient from search results
+    revalidateTag(`patient_search_${clinicId}_${patientId}`, 'max');
+  }
+}
+
+export async function invalidateDoctorSearchCascade(clinicId: string, doctorId?: string) {
+  revalidateTag(`doctors_listing_idx-${clinicId}`, 'max');
+  revalidateTag(`doctors_clinic_active_idx-${clinicId}`, 'max');
+
+  if (doctorId) {
+    revalidateTag(`doctor_search_${clinicId}_${doctorId}`, 'max');
+  }
+}
+
+// =========== SPECIALIZED INVALIDATION ===========
+
+export async function invalidateGrowthAndDevelopmentCascade(patientId: string) {
+  revalidateTag(`patient-growth-${patientId}`, 'max');
+  revalidateTag(`growth_records_patient_chart_idx-${patientId}`, 'max');
+  revalidateTag(`developmental_checks_patient_timeline_idx-${patientId}`, 'max');
+  revalidateTag(`feeding_logs_patient_daily_idx-${patientId}`, 'max');
+}
+
+export async function invalidateImmunizationsCascade(patientId: string, clinicId: string) {
+  revalidateTag(`immunizations_patient_schedule_idx-${patientId}`, 'max');
+  revalidateTag(`immunizations_history_idx-${patientId}`, 'max');
+  revalidateTag(`immunizations_due_idx-${clinicId}`, 'max');
+}
+
+// =========== EVENT-BASED HANDLERS ===========
+
+export async function onPatientCreated(patientId: string, clinicId: string) {
+  await invalidatePatientCascade(patientId, clinicId);
+  revalidateTag(`clinic-stats-${clinicId}`, 'max');
+}
+
+export async function onPatientUpdated(
+  patientId: string,
+  clinicId: string,
+  options?: { contactInfoChanged?: boolean }
+) {
+  await invalidatePatientCascade(patientId, clinicId, {
+    includeFinancial: true,
+    includeGuardians: true
+  });
+
+  if (options?.contactInfoChanged) {
+    revalidateTag(`patient_guardians_patient_primary_idx-${patientId}`, 'max');
+  }
 }

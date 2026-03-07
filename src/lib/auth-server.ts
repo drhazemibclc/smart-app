@@ -1,17 +1,25 @@
+import type { Route } from 'next';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
 import { auth, type Role, type Session } from '@/server/auth';
 
 import type { Clinic } from '../generated/prisma/client';
 import { prisma } from '../server/db';
+import { getRoleRedirect } from './routes';
+
+const ROLE_ORDER: Role[] = ['patient', 'staff', 'doctor', 'admin'];
+
+function hasAccess(userRole: Role, requiredRole: Role) {
+  return ROLE_ORDER.indexOf(userRole) >= ROLE_ORDER.indexOf(requiredRole);
+}
 
 // Cached session getter for Server Components
 export const getSession = cache(async () => {
+  const headersList = await headers();
   const session = await auth.api.getSession({
-    headers: new Headers({
-      cookie: '' // Will be populated by middleware/proxy
-    })
+    headers: headersList
   });
   return session;
 });
@@ -21,11 +29,22 @@ export async function getUser() {
   return session?.user ?? null;
 }
 
-export async function requireAuth() {
+export async function requireAuth(requiredRole?: Role) {
   const session = await getSession();
+
   if (!session?.user) {
+    redirect('/login');
     throw new Error('Unauthorized');
   }
+
+  if (requiredRole) {
+    const userRole = (session.user.role ?? 'patient') as Role;
+
+    if (!hasAccess(userRole, requiredRole)) {
+      redirect(getRoleRedirect(userRole) as Route);
+    }
+  }
+
   return session;
 }
 
@@ -34,69 +53,124 @@ export const checkRole = async (role: Role) => {
   return session?.user.role?.toLowerCase() === role;
 };
 
-export const getRole = (session: Session | null): Role | null => {
+export const getRole = async (): Promise<Role | null> => {
+  const session = await getSession();
   if (!session?.user?.role) return null;
   const role = session.user.role.toLowerCase() as Role;
   return role;
 };
 
+export async function requireRole(
+  role: Role,
+  options?: {
+    redirectTo?: Route;
+    roleRedirectTo?: Route;
+  }
+) {
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect(options?.redirectTo ?? '/login');
+  }
+
+  const userRole = (session.user.role ?? 'patient') as Role;
+
+  if (!hasAccess(userRole, role)) {
+    redirect(options?.roleRedirectTo ?? (getRoleRedirect(userRole) as Route));
+  }
+
+  return session;
+}
 // Permission checking with Better Auth access control
 export const hasPermission = async (): Promise<boolean> => {
+  const session = await getSession();
+  const role = session?.user?.role?.toLowerCase() as Role;
+
   const result = await auth.api.userHasPermission({
     body: {
       permissions: {
         patients: ['create']
       },
-      role: 'patient'
+      role: role || 'patient'
     }
   });
   return result.success;
 };
-// Optimized getter utilities
-export const getUserId = (session: Session | null) => session?.user?.id ?? null;
-export const getUserEmail = (session: Session | null) => session?.user?.email ?? null;
-export const getUserName = (session: Session | null) => session?.user?.name ?? null;
-export const getUserRole = (session: Session | null) => session?.user?.role ?? null;
+
+export const getUserId = async () => {
+  const session = await getSession();
+  return session?.user?.id ?? null;
+};
+
+export const getUserEmail = async () => {
+  const session = await getSession();
+  return session?.user?.email ?? null;
+};
+
+export const getUserName = async () => {
+  const session = await getSession();
+  return session?.user?.name ?? null;
+};
+
+export const getUserRole = async () => {
+  const session = await getSession();
+  return session?.user?.role ?? null;
+};
 
 // Dashboard access control
-export const canAccessDashboard = (session: Session | null): boolean => {
-  const role = getRole(session);
+export const canAccessDashboard = async (): Promise<boolean> => {
+  const role = await getRole();
   return role ? ['admin', 'doctor', 'staff', 'patient'].includes(role) : false;
 };
+
 export const getRoleFromSession = (session: Session | null): Role | null => {
   if (!session?.user?.role) return null;
   const role = session.user.role.toLowerCase() as Role;
   return role;
 };
 
-type AuthInstance = typeof auth;
-export const createServerRoleChecker = (auth: AuthInstance) => async (session: Session) => {
+export type RoleChecker = {
+  role: Role | null;
+  isAdmin: boolean;
+  isDoctor: boolean;
+  isStaff: boolean;
+  isPatient: boolean;
+  canManagePatients: boolean;
+  canCreateAppointments: boolean;
+  canViewRecords: boolean;
+  canManageStaff: boolean;
+  hasPermission: (permissions: Record<string, string[]>) => Promise<boolean>;
+};
+
+export const createServerRoleChecker = (authInstance: typeof auth) => async (): Promise<RoleChecker | null> => {
+  const session = await getSession();
+
   if (!session?.user?.id) {
     return null;
   }
 
-  const userRole = getRole(session);
+  const userRole = (session.user.role?.toLowerCase() as Role) || null;
 
   const [canManagePatients, canCreateAppointments, canViewRecords, canManageStaff] = await Promise.all([
-    auth.api.userHasPermission({
+    authInstance.api.userHasPermission({
       body: {
         role: userRole ?? 'admin',
         permissions: { patients: ['update'] }
       }
     }),
-    auth.api.userHasPermission({
+    authInstance.api.userHasPermission({
       body: {
         role: userRole ?? 'admin',
         permissions: { appointments: ['create'] }
       }
     }),
-    auth.api.userHasPermission({
+    authInstance.api.userHasPermission({
       body: {
         role: userRole ?? 'admin',
         permissions: { records: ['read'] }
       }
     }),
-    auth.api.userHasPermission({
+    authInstance.api.userHasPermission({
       body: {
         role: userRole ?? 'admin',
         permissions: { staff: ['update'] }
@@ -110,30 +184,30 @@ export const createServerRoleChecker = (auth: AuthInstance) => async (session: S
     isDoctor: userRole === 'doctor',
     isStaff: userRole === 'staff',
     isPatient: userRole === 'patient',
-    canManagePatients,
-    canCreateAppointments,
-    canViewRecords,
-    canManageStaff,
+    canManagePatients: canManagePatients.success,
+    canCreateAppointments: canCreateAppointments.success,
+    canViewRecords: canViewRecords.success,
+    canManageStaff: canManageStaff.success,
 
     hasPermission: async (permissions: Record<string, string[]>) => {
-      return await auth.api.userHasPermission({
+      const result = await authInstance.api.userHasPermission({
         body: {
           role: userRole ?? 'admin',
           permissions
         }
       });
+      return result.success;
     }
   };
 };
 
-export const getCurrentClinic = async (): Promise<Pick<Clinic, 'id' | 'name'> | null> => {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  });
+export const getCurrentClinic = cache(async (): Promise<Pick<Clinic, 'id' | 'name'> | null> => {
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return null;
   }
+
   const clinicId = session.user.clinic?.id;
   if (!clinicId) {
     return null;
@@ -143,11 +217,13 @@ export const getCurrentClinic = async (): Promise<Pick<Clinic, 'id' | 'name'> | 
     where: { id: clinicId, isDeleted: false },
     select: { id: true, name: true }
   });
-  return clinic || null;
-};
-export const getClinicFromHeaders = cache(async (headersList?: Headers) => {
-  const headersResolved = headersList || (await headers());
-  const clinicId = headersResolved.get('x-clinic-id');
+
+  return clinic;
+});
+
+export const getClinicFromHeaders = cache(async () => {
+  const headersList = await headers();
+  const clinicId = headersList.get('x-clinic-id');
 
   if (clinicId) {
     const clinic = await prisma.clinic.findUnique({
@@ -156,6 +232,7 @@ export const getClinicFromHeaders = cache(async (headersList?: Headers) => {
     });
     if (clinic) return clinic;
   }
+
   // Fallback to first clinic (development only)
   if (process.env.NODE_ENV === 'development') {
     const clinic = await prisma.clinic.findFirst({
@@ -166,3 +243,19 @@ export const getClinicFromHeaders = cache(async (headersList?: Headers) => {
 
   throw new Error('No clinic found');
 });
+
+export function getRoleRedirectPath(role?: Role | string): string {
+  if (!role) return '/dashboard';
+
+  const redirects: Record<Role, string> = {
+    admin: '/admin/dashboard',
+    doctor: '/doctor',
+    staff: '/staff',
+    patient: '/patient'
+  };
+
+  return redirects[role as Role] ?? '/dashboard';
+}
+
+// Optional: Create a pre-configured role checker instance
+export const checkUserRole = createServerRoleChecker(auth);

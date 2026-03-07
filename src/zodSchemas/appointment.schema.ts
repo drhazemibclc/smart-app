@@ -253,3 +253,47 @@ export interface AppointmentCalendarEvent {
   title: string;
   type: AppointmentType;
 }
+
+const APPOINTMENT_ID_MIN_LENGTH = 1;
+const APPOINTMENT_ID_MAX_LENGTH = 100;
+
+// Input Schemas
+// export const AppointmentActionSchema = z.object({
+//   id: z.uuid(),
+//   status: appointmentStatusSchema,
+//   reason: z.string().min(REASON_MIN_LENGTH).max(REASON_MAX_LENGTH).optional(),
+//   notes: z.string().min(NOTES_MIN_LENGTH).max(NOTES_MAX_LENGTH).optional()
+// });
+
+// export const AppointmentByIdSchema = z.object({
+//   id: z.uuid()
+// });
+
+export const AppointmentByPublicIdSchema = z.object({
+  publicId: z.string().min(APPOINTMENT_ID_MIN_LENGTH).max(APPOINTMENT_ID_MAX_LENGTH)
+});
+
+// export const AppointmentListSchema = z.object({
+//   clinicId: z.uuid(),
+//   patientId: z.uuid().optional(),
+//   doctorId: z.uuid().optional(),
+//   status: z
+//     .enum(AppointmentStatus)
+//     .optional(),
+//   startTime: z.string().optional(),
+//   endTime: z.string().optional(),
+//   limit: z.number().min(APPOINTMENT_LIMIT_MIN).max(APPOINTMENT_LIMIT_MAX).default(APPOINTMENT_LIMIT_DEFAULT),
+//   offset: z.number().min(0).default(0)
+// });
+
+// export const allAppointmentsInputSchema = z.object({
+//   id: z.uuid(),
+//   search: z.string().optional(),
+//   page: z.number().optional().default(1),
+//   limit: z.number().optional().default(10)
+// });
+
+export const getAvailableTimesInputSchema = z.object({
+  doctorId: z.uuid(),
+  date: z.string()
+});

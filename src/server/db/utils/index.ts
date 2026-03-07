@@ -6,6 +6,5 @@ export * from './getScore';
 export * from './notifications';
 export * from './pediatrics';
 export * from './scoreCalc';
-export * from './seetings';
 export * from './time';
 export * from './vaccine';

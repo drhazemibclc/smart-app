@@ -1,6 +1,6 @@
 'use cache';
 
-import { cacheLife, cacheTag } from 'next/cache';
+import { cacheLife, cacheTag, revalidateTag } from 'next/cache';
 
 import { clinicService, dashboardService } from '@/db/services/clinic.service';
 
@@ -52,7 +52,7 @@ export async function getCachedFeatures(clinicId: string) {
 export async function getCachedClinicStats(clinicId: string) {
   'use cache';
 
-  cacheTag(CACHE_TAGS.clinic.stats);
+  cacheTag(CACHE_TAGS.clinic.stats(clinicId));
   cacheTag(CACHE_TAGS.clinic.dashboard(clinicId));
   cacheLife('hours');
 
@@ -76,7 +76,7 @@ export async function getCachedDashboardStats(clinicId: string, from: Date, to: 
 export async function getCachedGeneralStats() {
   'use cache';
 
-  cacheTag(CACHE_TAGS.clinic.stats);
+  cacheTag(CACHE_TAGS.clinic.all);
   cacheLife('hours'); // 1 hour for global stats
 
   return dashboardService.getGeneralStats();
@@ -126,4 +126,25 @@ export async function getCachedMonthlyPerformance(clinicId: string) {
   cacheLife('hours'); // 1 hour
 
   return dashboardService.getMonthlyPerformance(clinicId);
+}
+
+export async function invalidateClinicCache(clinicId: string) {
+  revalidateTag(`clinic-stats-${clinicId}`, 'max');
+  revalidateTag(`dashboard-${clinicId}`, 'max');
+  revalidateTag(`financial-overview-${clinicId}`, 'max');
+}
+
+export async function onClinicCache(userId: string, clinicId: string) {
+  // Invalidate user's clinic list
+  revalidateTag(`user-clinics-${userId}`, 'max');
+
+  // Invalidate specific clinic cache
+  revalidateTag(`clinic-${clinicId}`, 'max');
+
+  // Invalidate clinic stats and dashboard
+  revalidateTag(`clinic-stats-${clinicId}`, 'max');
+  revalidateTag(`dashboard-${clinicId}`, 'max');
+
+  // Invalidate clinic settings
+  revalidateTag(`clinic-settings-${clinicId}`, 'max');
 }

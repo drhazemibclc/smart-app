@@ -63,7 +63,8 @@ export async function createDoctorAction(input: unknown) {
     {
       ...validated,
       appointmentPrice: toNumber(validated.appointmentPrice),
-      clinicId: validated.clinicId
+      clinicId: validated.clinicId,
+      type: 'FULL'
     },
     session.user.id
   );

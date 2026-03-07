@@ -11,8 +11,15 @@ import {
   type PaymentInput,
   PaymentSchema
 } from '../../../zodSchemas';
+import {
+  CreatePaymentSchema,
+  GetPaymentsSchema,
+  PaymentIdSchema,
+  UpdatePaymentSchema
+} from '../../../zodSchemas/billing.schema';
 import { medicalService } from '../../db';
 import { paymentService } from '../../db/services';
+import { billingService } from '../../db/services/billing.service';
 import { adminProcedure, createTRPCRouter, protectedProcedure } from '..';
 
 // Extended schema for diagnosis with appointment
@@ -98,7 +105,7 @@ export const paymentsRouter = createTRPCRouter({
 
         // Model field names
         symptoms: input.symptoms,
-        diagnosis: input.diagnosis,
+        diagnosis: input.diagnosis ?? '',
         treatment: input.treatment,
         notes: input.notes,
         prescribedMedications: input.prescribedMedications ?? '',
@@ -181,5 +188,188 @@ export const paymentsRouter = createTRPCRouter({
         message: error instanceof Error ? error.message : 'Failed to generate bill'
       });
     }
+  }),
+  getById: protectedProcedure.input(PaymentIdSchema.shape.id).query(async ({ ctx, input }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    return billingService.getPaymentById(input, clinicId);
+  }),
+
+  getByPatient: protectedProcedure.input(GetPaymentsSchema).query(async ({ ctx, input }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    if (!input.patientId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Patient ID is required'
+      });
+    }
+
+    return billingService.getPaymentsByPatient(input.patientId,   input);
+  }),
+
+  getByClinic: protectedProcedure.input(GetPaymentsSchema.omit({ patientId: true })).query(async ({ ctx, input }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    return billingService.getPaymentsByClinic(clinicId, input);
+  }),
+
+  getStats: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date()
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!clinicId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found'
+        });
+      }
+
+      return billingService.getPaymentStats(clinicId, input.startDate, input.endDate);
+    }),
+
+  getOverdue: protectedProcedure.query(async ({ ctx }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    return billingService.getOverduePayments(clinicId);
+  }),
+
+  getMonthlyRevenue: protectedProcedure
+    .input(
+      z.object({
+        months: z.number().int().min(1).max(24).default(12)
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!clinicId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found'
+        });
+      }
+
+      return billingService.getMonthlyRevenue(clinicId, input.months);
+    }),
+
+  getServices: protectedProcedure.query(async ({ ctx }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    return billingService.getServices(clinicId);
+  }),
+
+  // ==================== MUTATIONS ====================
+
+  create: protectedProcedure.input(CreatePaymentSchema).mutation(async ({ ctx, input }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    const result = await billingService.createPayment({ ...input, clinicId }, ctx.user.id);
+
+    return {
+      success: true,
+      message: 'Payment created successfully',
+      data: result
+    };
+  }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        data: UpdatePaymentSchema
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const clinicId = ctx.session?.user?.clinic?.id;
+      if (!clinicId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Clinic ID not found'
+        });
+      }
+
+      const result = await billingService.updatePayment(input.id, clinicId, input.data, ctx.user.id);
+
+      return {
+        success: true,
+        message: 'Payment updated successfully',
+        data: result
+      };
+    }),
+
+  delete: protectedProcedure.input(PaymentIdSchema.shape.id).mutation(async ({ ctx, input }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    await billingService.deletePayment(input, clinicId, ctx.user.id);
+
+    return {
+      success: true,
+      message: 'Payment deleted successfully'
+    };
+  }),
+
+  processPayment: protectedProcedure.input(PaymentIdSchema.shape.id).mutation(async ({ ctx, input }) => {
+    const clinicId = ctx.session?.user?.clinic?.id;
+    if (!clinicId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Clinic ID not found'
+      });
+    }
+
+    const result = await billingService.processPayment(input, clinicId, ctx.user.id);
+
+    return {
+      success: true,
+      message: 'Payment processed successfully',
+      data: result
+    };
   })
 });

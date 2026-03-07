@@ -79,11 +79,11 @@ export const VitalSignsBaseSchema = z
 // ==================== DIAGNOSIS SCHEMAS ====================
 export const DiagnosisBaseSchema = z.object({
   // Foreign Keys
-  patientId: z.uuid('Invalid Patient ID'),
-  doctorId: z.uuid('Invalid Doctor ID'),
-  medicalId: z.uuid('Medical Record ID is required'), // Required & Unique in Model
-  clinicId: z.uuid().optional().nullable(),
-  appointmentId: z.uuid().optional().nullable(),
+  patientId: z.string().uuid('Invalid Patient ID'),
+  doctorId: z.string().uuid('Invalid Doctor ID'),
+  medicalId: z.string().uuid('Medical Record ID is required'), // Required & Unique in Model
+  clinicId: z.string().uuid().optional().nullable(),
+  appointmentId: z.string().uuid().optional().nullable(),
 
   // Core Fields
   date: z.date().default(() => new Date()),
@@ -255,3 +255,46 @@ export type DiagnosisFilterInput = z.infer<typeof DiagnosisFilterSchema>;
 export type VitalSignsCreateInput = z.infer<typeof VitalSignsCreateSchema>;
 export type VitalSignsUpdateInput = z.infer<typeof VitalSignsUpdateSchema>;
 export type VitalSignsFilterInput = z.infer<typeof VitalSignsFilterSchema>;
+
+// ==================== COMPLETE ENCOUNTER SCHEMA ====================
+export const CompleteEncounterSchema = z.object({
+  // Patient & Appointment Info
+  patientId: idSchema,
+  doctorId: idSchema,
+  appointmentId: idSchema,
+  clinicId: clinicIdSchema,
+
+  // Encounter Details
+  encounterType: encounterTypeSchema.default('CONSULTATION'),
+  encounterStatus: encounterStatusSchema.default('COMPLETED'),
+  encounterDate: dateSchema.default(() => new Date()),
+
+  // Chief Complaint & History
+  symptoms: z.string().min(1, 'Chief complaint is required').max(5000),
+  diagnosis: z.string().max(2000).optional(),
+  treatment: z.string().max(3000).optional(),
+  followUpPlan: z.string().max(2000).optional(),
+  notes: z.string().max(5000).optional(),
+
+  // Vital Signs (optional)
+  vitals: z
+    .object({
+      bodyTemperature: z.number().min(30).max(45).optional(),
+      systolic: z.number().min(50).max(250).optional(),
+      diastolic: z.number().min(30).max(150).optional(),
+      heartRate: z.number().min(30).max(250).optional(),
+      respiratoryRate: z.number().min(5).max(60).optional(),
+      oxygenSaturation: z.number().min(50).max(100).optional(),
+      notes: z.string().max(1000).optional()
+    })
+    .optional(),
+
+  // Medical Record Details (SOAP)
+  subjective: z.string().max(3000).optional(),
+  objective: z.string().max(3000).optional(),
+  assessment: z.string().max(2000).optional(),
+  plan: z.string().max(3000).optional()
+});
+
+// Export types
+export type CompleteEncounterInput = z.infer<typeof CompleteEncounterSchema>;

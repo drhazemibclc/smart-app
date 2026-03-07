@@ -10,8 +10,11 @@ export const CACHE_TAGS = {
   // ==================== CLINIC ====================
   clinic: {
     all: 'clinics:all',
+    billing: (clinicId: string) => `clinic:${clinicId}:billing`,
+    stats: (clinicId: string) => `clinic:${clinicId}:stats`,
+    overdue: (clinicId: string) => `clinic:${clinicId}:overdue`,
+    revenue: (clinicId: string) => `clinic:${clinicId}:revenue`,
     byId: (id: string) => `clinic:${id}`,
-    stats: 'clinic:stats:global',
     dashboard: (clinicId: string) => `clinic:${clinicId}:dashboard`,
     counts: (clinicId: string) => `clinic:${clinicId}:counts`,
     settings: (clinicId: string) => `clinic:${clinicId}:settings`,
@@ -19,15 +22,30 @@ export const CACHE_TAGS = {
     members: (clinicId: string) => `clinic:${clinicId}:members`,
     activity: (clinicId: string) => `clinic:${clinicId}:activity`
   },
+  billing: {
+    all: 'billing:all',
+    byId: (id: string) => `billing:${id}`,
+    byClinic: (clinicId: string) => `billing:clinic:${clinicId}`,
+    byPatient: (patientId: string) => `billing:patient:${patientId}`,
+    byDate: (date: string) => `billing:date:${date}`,
+    overdue: (clinicId: string) => `billing:overdue:${clinicId}`,
+    stats: (clinicId: string) => `billing:stats:${clinicId}`,
+    revenue: (clinicId: string) => `billing:revenue:${clinicId}`
+  },
+  admin: {
+    dashboard: (clinicId: string) => `admin:dashboard:${clinicId}`,
+    activity: (userId: string) => `admin:activity:${userId}`,
+    activityByClinic: (clinicId: string) => `admin:activity:clinic:${clinicId}`,
+    reports: (clinicId: string, reportType: string) => `admin:reports:${reportType}:clinic:${clinicId}`,
+    stats: (clinicId: string) => `admin:stats:${clinicId}`
+  },
+
   patients: (clinicId: string) => `clinic-${clinicId}-patients`,
   patientMedicalRecords: (patientId: string) => `patient-${patientId}-medical-records`,
   patientMeasurements: (patientId: string) => `patient-${patientId}-measurements`,
   patientPrescriptions: (patientId: string) => `patient-${patientId}-prescriptions`,
 
   // Doctor tags
-  doctors: (clinicId: string) => `clinic-${clinicId}-doctors`,
-  doctorSchedule: (doctorId: string) => `doctor-${doctorId}-schedule`,
-  doctorAppointments: (doctorId: string) => `doctor-${doctorId}-appointments`,
 
   // Staff tags
   staffList: (clinicId: string) => `clinic-${clinicId}-staff`,
@@ -75,11 +93,15 @@ export const CACHE_TAGS = {
   // ==================== DOCTOR ====================
   doctor: {
     all: 'doctors:all',
+    schedule: (clinicId: string) => `doctors:clinic:${clinicId}:schedule`,
+    doctors: (clinicId: string) => `clinic-${clinicId}-doctors`,
+    doctorSchedule: (doctorId: string) => `doctor-${doctorId}-schedule`,
+    doctorAppointments: (doctorId: string) => `doctor-${doctorId}-appointments`,
     byId: (id: string) => `doctor:${id}`,
     byClinic: (clinicId: string) => `doctors:clinic:${clinicId}`,
     bySpecialty: (specialty: string, clinicId: string) => `doctors:specialty:${specialty}:clinic:${clinicId}`,
     // Nested resources
-    workingDays: (doctorId: string) => `doctor:${doctorId}:working-days`,
+    workingDays: (doctorId: string, day: string) => `doctor:${doctorId}:working-days:${day}`,
     appointments: (doctorId: string) => `doctor:${doctorId}:appointments`,
     performance: (doctorId: string) => `doctor:${doctorId}:performance`,
     ratings: (doctorId: string) => `doctor:${doctorId}:ratings`
@@ -115,6 +137,7 @@ export const CACHE_TAGS = {
     all: 'appointments:all',
     byId: (id: string) => `appointment:${id}`,
     byClinic: (clinicId: string) => `appointments:clinic:${clinicId}`,
+
     byPatient: (patientId: string) => `appointments:patient:${patientId}`,
     byDoctor: (doctorId: string) => `appointments:doctor:${doctorId}`,
     byDate: (date: string) => `appointments:date:${date}`,
@@ -265,12 +288,6 @@ export const CACHE_TAGS = {
   },
 
   // ==================== ADMIN ====================
-  admin: {
-    dashboard: (clinicId: string) => `admin:dashboard:${clinicId}`,
-    activity: (userId: string) => `admin:activity:${userId}`,
-    activityByClinic: (clinicId: string) => `admin:activity:clinic:${clinicId}`,
-    reports: (clinicId: string, reportType: string) => `admin:reports:${reportType}:clinic:${clinicId}`
-  },
 
   // ==================== SYSTEM ====================
   system: {

@@ -1,7 +1,7 @@
 // modules/doctor/doctor.actions.ts
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 import { getSession } from '@/lib/auth-server';
 import { CreateDoctorSchema, DeleteDoctorSchema } from '@/zodSchemas/doctor.schema';
@@ -71,4 +71,51 @@ export async function getDoctorByIdAction(id: string) {
   const doctor = await getCachedDoctorById(id, session.user.clinic.id);
 
   return { success: true, data: doctor };
+}
+
+export async function invalidateDoctorCascade(
+  doctorId: string,
+  clinicId: string,
+  options?: {
+    includeSchedule?: boolean;
+    includeAppointments?: boolean;
+    includePatients?: boolean;
+  }
+) {
+  const opts = {
+    includeSchedule: true,
+    includeAppointments: true,
+    includePatients: false,
+    ...options
+  };
+
+  // Doctor-specific caches
+  revalidateTag(`doctor-stats-${doctorId}`, 'max');
+  revalidateTag(`ratings_doctor_avg_idx-${doctorId}`, 'max');
+  revalidateTag(`doctors_clinic_active_idx-${clinicId}`, 'max');
+
+  // Schedule-related
+  if (opts.includeSchedule) {
+    const today = new Date().toISOString().split('T')[0];
+    revalidateTag(`doctor-schedule-${doctorId}-${today}`, 'max');
+    revalidateTag(`working_days_doctor_active_idx-${doctorId}`, 'max');
+    revalidateTag(`working_days_schedule_idx-${doctorId}`, 'max');
+  }
+
+  // Appointment-related
+  if (opts.includeAppointments) {
+    revalidateTag(`appointments_doctor_date_idx-${doctorId}`, 'max');
+    revalidateTag(`encounters_doctor_schedule_idx-${doctorId}`, 'max');
+    revalidateTag(`today-appointments-${clinicId}`, 'max');
+    revalidateTag(`clinic-stats-${clinicId}`, 'max');
+  }
+
+  // Patient-related if doctor's patient list affected
+  if (opts.includePatients) {
+    revalidateTag(`medical_records_doctor_patient_idx-${doctorId}`, 'max');
+    revalidateTag(`prescriptions_doctor_patient_idx-${doctorId}`, 'max');
+  }
+
+  // Search and listing caches
+  revalidateTag(`doctors_listing_idx-${clinicId}`, 'max');
 }

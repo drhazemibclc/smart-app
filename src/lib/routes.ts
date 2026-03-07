@@ -15,11 +15,12 @@ export const AUTH_ROUTES = ['/login', '/register', '/register-provider', '/choos
 export const PROTECTED_ROUTES = ['/dashboard', '/admin', '/doctor', '/staff', '/patient', '/record'];
 
 // Better-Auth returns lowercase roles, so we use lowercase keys
+// All roles redirect to /dashboard
 export const ROLE_REDIRECTS: Record<Role, string> = {
-  admin: '/admin/dashboard',
-  doctor: '/doctor',
-  staff: '/staff',
-  patient: '/patient'
+  admin: '/dashboard',
+  doctor: '/dashboard',
+  staff: '/dashboard',
+  patient: '/dashboard'
 };
 
 export const DEFAULT_REDIRECT = '/';

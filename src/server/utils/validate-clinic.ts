@@ -42,19 +42,19 @@ export const createClinicPermissionChecker =
       return null;
     }
 
-    const userRole = getRole(session);
+    const userRole = await getRole();
 
     // Grouping permissions into one "Check" if your Auth provider supports it,
     // otherwise, the Promise.all you had is the best approach.
     const [canManagePatients, canManageStaff, canViewRecords] = await Promise.all([
       authInstance.api.userHasPermission({
-        body: { role: userRole ?? 'admin', permissions: { patients: ['update', 'delete'] } }
+        body: { role: userRole ?? 'patient', permissions: { patients: ['update', 'delete'] } }
       }),
       authInstance.api.userHasPermission({
-        body: { role: userRole ?? 'admin', permissions: { staff: ['create', 'update'] } }
+        body: { role: userRole ?? 'patient', permissions: { staff: ['create', 'update'] } }
       }),
       authInstance.api.userHasPermission({
-        body: { role: userRole ?? 'admin', permissions: { records: ['read'] } }
+        body: { role: userRole ?? 'patient', permissions: { records: ['read'] } }
       })
     ]);
 
@@ -67,7 +67,7 @@ export const createClinicPermissionChecker =
       // Helper for ad-hoc checks
       check: async (resource: string, action: string) => {
         return await authInstance.api.userHasPermission({
-          body: { role: userRole ?? 'admin', permissions: { [resource]: [action] } }
+          body: { role: userRole ?? 'patient', permissions: { [resource]: [action] } }
         });
       }
     };

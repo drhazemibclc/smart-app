@@ -44,7 +44,11 @@ export async function createDiagnosisAction(input: unknown) {
 
   const validated = DiagnosisCreateSchema.parse(input);
 
-  const result = await medicalService.createDiagnosis(validated as DiagnosisCreateInput);
+  const result = await medicalService.createDiagnosis({
+    ...(validated as DiagnosisCreateInput),
+    diagnosis: validated.diagnosis ?? '',
+    status: (validated as DiagnosisCreateInput).status ?? 'ACTIVE'
+  });
 
   revalidatePath(`/dashboard/patients/${validated.patientId}`);
   revalidatePath('/dashboard/medical-records');

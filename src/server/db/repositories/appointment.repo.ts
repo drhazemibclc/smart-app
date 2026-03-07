@@ -251,6 +251,25 @@ export async function findAppointments(db: PrismaClient, params: FindAppointment
   });
 }
 
+export async function getAppointmentStatusCounts(db: PrismaClient, clinicId: string, days: number) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  const appointments = await db.appointment.groupBy({
+    by: ['status'],
+    where: {
+      clinicId,
+      isDeleted: false,
+      appointmentDate: { gte: startDate }
+    },
+    _count: true
+  });
+
+  return appointments.map(({ status, _count }) => ({
+    status,
+    count: _count
+  }));
+}
+
 export async function findAppointmentsByPatient(
   db: PrismaClient,
   params: Omit<FindAppointmentsParams, 'doctorId'> & { includePast?: boolean }

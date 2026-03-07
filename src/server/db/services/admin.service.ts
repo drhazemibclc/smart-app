@@ -18,6 +18,7 @@ import { logger } from '@/logger';
 import { CACHE_KEYS, CACHE_TTL } from '@/server/redis/cache-keys';
 
 import type { MonthlyTrend } from '../../../types/prescription';
+import { calculateAppointmentCounts, processMonthlyData } from '../../../utils/admin';
 import {
   CreateNewDoctorInputSchema,
   type CreateStaffInput,
@@ -35,6 +36,7 @@ import {
 import { prescriptionRepo, ValidationError } from '..';
 import { prisma } from '../client';
 import { AppError, ConflictError, NotFoundError } from '../error';
+import { adminQueries } from '../repositories/admin.repo';
 import * as appointmentRepo from '../repositories/appointment.repo';
 import * as dashboardRepo from '../repositories/dashboard.repo';
 import * as doctorRepo from '../repositories/doctor.repo';
@@ -1728,6 +1730,42 @@ export class AdminService {
       });
     }
   }
+  async getDashboardStats(clinicId: string) {
+    const stats = await adminQueries.getDashboardStats(clinicId);
+
+    // Process data for the UI
+    const appointmentCounts = calculateAppointmentCounts(stats.appointmentsByStatus as unknown as Appointment[]);
+    const monthlyData = processMonthlyData(stats.monthlyAppointments as unknown as Appointment[]);
+
+    return {
+      totalPatient: stats.totalPatients,
+      totalDoctors: stats.totalDoctors,
+      totalAppointments: stats.recentAppointments.length,
+      appointmentCounts,
+      monthlyData,
+      last5Records: stats.recentAppointments,
+      availableDoctors: [] // This will be fetched separately
+    };
+  }
+
+  async getAvailableDoctors(clinicId: string, day: string) {
+    const doctors = await adminQueries.getAvailableDoctors(clinicId, day);
+
+    // Format for UI
+    return doctors.map(doctor => ({
+      id: doctor.id,
+      name: doctor.name,
+      specialty: doctor.specialty,
+      img: doctor.img,
+      colorCode: doctor.colorCode,
+      workingDays: doctor.workingDays.map(wd => ({
+        day: wd.day,
+        startTime: wd.startTime,
+        endTime: wd.endTime
+      })),
+      appointmentCount: doctor.appointments.length
+    }));
+  }
 
   async getPrescriptionDashboardStats(
     clinicId: string,
@@ -1739,7 +1777,7 @@ export class AdminService {
     doctorStats: Array<{ doctorId: string; doctorName?: string; total: number; active: number }>;
     expiringSoon: number;
   }> {
-    const validatedClinicId = z.string().uuid().parse(clinicId);
+    const validatedClinicId = z.uuid().parse(clinicId);
     const cacheKey = CACHE_KEYS.PRESCRIPTION_DASHBOARD(validatedClinicId);
     const startTime = Date.now();
 
@@ -1817,6 +1855,52 @@ export class AdminService {
       });
       throw new AppError('Unable to fetch prescription dashboard statistics', {
         code: 'PRESCRIPTION_DASHBOARD_FETCH_ERROR',
+        statusCode: 500
+      });
+    }
+  }
+  async getAppointmentStatus(clinicId: string, days: number) {
+    const validatedClinicId = z.uuid().parse(clinicId);
+    const validatedDays = z
+      .number()
+      .min(1)
+      .max(90)
+      .parse(typeof days === 'string' ? Number.parseInt(days, 10) : days);
+
+    const cacheKey = `appointment-status:${validatedClinicId}:${validatedDays}`;
+
+    try {
+      if (this.CACHE_ENABLED) {
+        const cached = await cacheService.get(cacheKey);
+        if (cached) return cached;
+      }
+
+      // const startDate = subDays(new Date(), validatedDays);
+      const stats = await appointmentRepo.getAppointmentStatusCounts(this.db, validatedClinicId, validatedDays);
+
+      const total = Array.isArray(stats) ? stats.reduce((acc, curr) => acc + (Number(curr.count) || 0), 0) : 0;
+
+      const breakdown = stats.map(s => ({
+        status: s.status,
+        count: Number(s.count) || 0
+      }));
+
+      const result = { total, breakdown };
+
+      if (this.CACHE_ENABLED) {
+        await cacheService.set(cacheKey, result, CACHE_TTL.DASHBOARD);
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Failed to get appointment status stats', {
+        error,
+        clinicId: validatedClinicId,
+        days: validatedDays
+      });
+
+      throw new AppError('Failed to fetch appointment status breakdown', {
+        code: 'APPOINTMENT_STATUS_FETCH_ERROR',
         statusCode: 500
       });
     }

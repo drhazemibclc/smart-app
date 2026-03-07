@@ -5,6 +5,16 @@ import { CACHE_KEYS } from '@/server/redis/cache-keys';
  * Maps Redis key patterns to Next.js invalidation tags
  */
 export const CACHE_TAGS = {
+  billing: {
+    all: 'billing',
+    byId: (id: string) => `billing-${id}`,
+    byClinic: (clinicId: string) => `billing-clinic-${clinicId}`,
+    byPatient: (patientId: string) => `billing-patient-${patientId}`,
+    byDate: (date: string) => `billing-date-${date}`,
+    overdue: (clinicId: string) => `billing-overdue-${clinicId}`,
+    stats: (clinicId: string) => `billing-stats-${clinicId}`,
+    revenue: (clinicId: string) => `billing-revenue-${clinicId}`
+  },
   drug: {
     all: 'drugs',
     active: 'drugs-active',
@@ -16,6 +26,7 @@ export const CACHE_TAGS = {
     formulary: (clinicId: string) => `drug-formulary-${clinicId}`
   },
   clinic: {
+    billing: (clinicId: string) => `clinic:${clinicId}:billing`,
     prescriptions: (clinicId: string) => `clinic:${clinicId}:prescriptions`,
     byId: (id: string) => CACHE_KEYS.CLINIC(id),
     members: (id: string) => `clinic:${id}:members`,
@@ -59,6 +70,7 @@ export const CACHE_TAGS = {
     clinics: (id: string) => CACHE_KEYS.CLINICS_USER(id)
   },
   patient: {
+    billing: (patientId: string) => `patient:${patientId}:billing`,
     byId: (id: string) => CACHE_KEYS.PATIENT(id),
     prescriptions: (patientId: string) => `patient:${patientId}:prescriptions`,
     medicalSummary: (patientId: string) => `patient:${patientId}:medical-summary`,
@@ -81,5 +93,12 @@ export const CACHE_TAGS = {
   },
   workingDays: {
     byClinic: (clinicId: string) => `clinic:${clinicId}:working-days`
+  },
+  service: {
+    byClinic: (clinicId: string) => `clinic:${clinicId}:services`
+  },
+  visit: {
+    today: (clinicId: string) => `visits:today:${clinicId}`,
+    upcoming: (clinicId: string) => `visits:upcoming:${clinicId}`
   }
 } as const;

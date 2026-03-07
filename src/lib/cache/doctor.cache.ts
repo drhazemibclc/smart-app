@@ -78,10 +78,10 @@ export async function getCachedDoctorDashboardStats(doctorId: string, clinicId: 
   return doctorService.getDoctorDashboardStats(doctorId, clinicId);
 }
 
-export async function getCachedDoctorWorkingDays(doctorId: string, clinicId: string) {
+export async function getCachedDoctorWorkingDays(doctorId: string, day: string, clinicId: string) {
   'use cache';
 
-  cacheTag(CACHE_TAGS.doctor.workingDays(doctorId));
+  cacheTag(CACHE_TAGS.doctor.workingDays(doctorId, day));
   cacheTag(CACHE_TAGS.doctor.byId(doctorId));
   cacheLife(CACHE_PROFILES.medicalMedium);
 

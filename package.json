@@ -129,6 +129,7 @@
     "analyze": "next experimental-analyze",
     "build": "next build",
     "check": "biome check --write",
+    "clean": "rm -rf .next",
     "db:admin": "bun ./src/server/auth/admin.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -143,8 +144,10 @@
     "lint": "biome check",
     "lint:css": "stylelint \"src/**/*.css\"",
     "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
+    "rebuild": "rm -rf .next && bun run build",
     "review": " bunx next internal trace .next/dev/trace-turbopack",
     "start": "next start",
+    "start:clean": "rm -rf .next && bun run build && bun run start",
     "trace": "NEXT_TURBOPACK_TRACING=1 next dev",
     "typecheck": "NODE_OPTIONS='--max-old-space-size=8192' tsc --noEmit",
     "validate:styles": "bun run lint:css && bunx @tailwindcss/cli -i src/styles/globals.css -o /dev/null"

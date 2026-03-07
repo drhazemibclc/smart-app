@@ -24,6 +24,30 @@ function revalidateWithProfile(tag: string, profile: CacheProfile | string = DEF
 }
 
 export const cacheHelpers = {
+  billing: {
+    invalidate: (id: string, clinicId: string) => {
+      revalidateTag(CACHE_TAGS.billing.byId(id), 'max');
+      revalidateTag(CACHE_TAGS.billing.byClinic(clinicId), 'max');
+      revalidateTag(CACHE_TAGS.clinic.billing(clinicId), 'max');
+    },
+
+    invalidateClinic: (clinicId: string) => {
+      revalidateTag(CACHE_TAGS.billing.byClinic(clinicId), 'max');
+      revalidateTag(CACHE_TAGS.clinic.billing(clinicId), 'max');
+      revalidateTag(CACHE_TAGS.clinic.stats(clinicId), 'max');
+      revalidateTag(CACHE_TAGS.clinic.revenue(clinicId), 'max');
+    },
+
+    invalidateStats: (clinicId: string) => {
+      revalidateTag(CACHE_TAGS.billing.stats(clinicId), 'max');
+      revalidateTag(CACHE_TAGS.clinic.stats(clinicId), 'max');
+    },
+
+    invalidateOverdue: (clinicId: string) => {
+      revalidateTag(CACHE_TAGS.billing.overdue(clinicId), 'max');
+      revalidateTag(CACHE_TAGS.clinic.overdue(clinicId), 'max');
+    }
+  },
   // ==================== CLINIC ====================
   clinic: {
     invalidate(id: string) {
@@ -116,6 +140,11 @@ export const cacheHelpers = {
       revalidateWithProfile(CACHE_TAGS.doctor.all, 'hours');
       revalidateWithProfile(CACHE_TAGS.clinic.dashboard(clinicId), 'minutes');
     },
+    invalidateAvailability: (clinicId: string) => {
+      revalidateTag(CACHE_TAGS.doctor.byClinic(clinicId), 'minutes');
+      revalidateTag(CACHE_TAGS.doctor.all, 'hours');
+      cacheHelpers.admin.invalidateDashboard(clinicId);
+    },
     /**
      * Invalidate doctor ratings and related statistical views
      */
@@ -138,9 +167,9 @@ export const cacheHelpers = {
       revalidateWithProfile(CACHE_TAGS.clinic.counts(clinicId), 'minutes');
     },
 
-    invalidateWorkingDays(doctorId: string, clinicId: string) {
+    invalidateWorkingDays(doctorId: string, day: string, clinicId: string) {
       revalidateWithProfile(CACHE_TAGS.doctor.byClinic(clinicId), 'minutes');
-      revalidateWithProfile(CACHE_TAGS.doctor.workingDays(doctorId), 'minutes');
+      revalidateWithProfile(CACHE_TAGS.doctor.workingDays(doctorId, day), 'minutes');
       revalidateWithProfile(CACHE_TAGS.doctor.byId(doctorId), 'seconds');
     },
 
@@ -430,6 +459,9 @@ export const cacheHelpers = {
   // ==================== ADMIN ====================
   admin: {
     invalidateDashboard(clinicId: string) {
+      revalidateTag(CACHE_TAGS.admin.dashboard(clinicId), 'minutes');
+      revalidateTag(CACHE_TAGS.clinic.dashboard(clinicId), 'minutes');
+      revalidateTag(CACHE_TAGS.clinic.counts(clinicId), 'minutes');
       revalidateWithProfile(CACHE_TAGS.admin.dashboard(clinicId), 'minutes');
       revalidateWithProfile(CACHE_TAGS.clinic.dashboard(clinicId), 'minutes');
       revalidateWithProfile(CACHE_TAGS.clinic.counts(clinicId), 'minutes');

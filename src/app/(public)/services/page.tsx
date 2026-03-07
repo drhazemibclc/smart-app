@@ -134,7 +134,7 @@ export default async function ServicesPage() {
 async function ServicesContent() {
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user.id;
-  const role = session ? getRole(session) : null;
+  const role = session ? getRole() : null;
 
   return (
     <div className='flex min-h-screen flex-col bg-linear-to-br from-blue-50 via-white to-blue-100'>

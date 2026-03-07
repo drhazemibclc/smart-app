@@ -89,6 +89,7 @@ export type AvailableDoctorProps = {
   workingDays: {
     day: string;
     startTime: string;
-    closeTime: string;
+    endTime: string;
   }[];
 }[];
+export type Weekday = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
