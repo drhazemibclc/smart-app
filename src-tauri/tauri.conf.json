@@ -1,0 +1,272 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "app": {
+    "enableGTKAppId": false,
+    "macOSPrivateApi": false,
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/**",
+          "$RESOURCE/**",
+          "$HOME/**"
+        ]
+      },
+      "capabilities": [
+        {
+          "description": "Main window capabilities with full access",
+          "identifier": "main-window",
+          "permissions": [
+            "core:default",
+            "log:default",
+            "core:window:allow-start-dragging",
+            "core:window:allow-set-size",
+            "core:window:allow-set-position",
+            "core:webview:allow-set-webview-zoom",
+            "shell:allow-open",
+            "fs:allow-read-file",
+            "fs:allow-write-file",
+            "fs:allow-read-dir",
+            "fs:allow-mkdir",
+            "fs:allow-exists"
+          ],
+          "windows": [
+            "main"
+          ]
+        },
+        {
+          "description": "Capabilities for sidecar communication",
+          "identifier": "sidecar-capability",
+          "permissions": [
+            "core:default",
+            "shell:allow-execute",
+            "shell:allow-sidecar"
+          ],
+          "windows": [
+            "main"
+          ]
+        }
+      ],
+      "csp": {
+        "connect-src": [
+          "'self'",
+          "ipc:",
+          "http://ipc.localhost",
+          "http://localhost:3030",
+          "tauri:"
+        ],
+        "default-src": [
+          "'self'",
+          "customprotocol:",
+          "asset:",
+          "http://asset.localhost"
+        ],
+        "font-src": [
+          "'self'",
+          "asset:",
+          "http://asset.localhost"
+        ],
+        "img-src": [
+          "'self'",
+          "asset:",
+          "blob:",
+          "data:",
+          "http://asset.localhost"
+        ],
+        "script-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'"
+        ],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'"
+        ],
+        "worker-src": [
+          "'self'",
+          "blob:"
+        ]
+      },
+      "dangerousDisableAssetCspModification": false,
+      "devCsp": {
+        "connect-src": [
+          "'self'",
+          "ipc:",
+          "http://ipc.localhost",
+          "http://localhost:3000",
+          "http://localhost:3030",
+          "tauri:",
+          "ws:",
+          "wss:"
+        ],
+        "default-src": [
+          "'self'",
+          "customprotocol:",
+          "asset:",
+          "http://asset.localhost"
+        ],
+        "font-src": [
+          "'self'",
+          "asset:",
+          "http://asset.localhost",
+          "data:"
+        ],
+        "img-src": [
+          "'self'",
+          "asset:",
+          "blob:",
+          "data:",
+          "http://asset.localhost",
+          "http://localhost:3000"
+        ],
+        "script-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'"
+        ],
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'"
+        ],
+        "worker-src": [
+          "'self'",
+          "blob:"
+        ]
+      },
+      "freezePrototype": false,
+      "pattern": {
+        "use": "brownfield"
+      }
+    },
+    "trayIcon": null,
+    "windows": [
+      {
+        "acceptFirstMouse": true,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection",
+        "center": true,
+        "closable": true,
+        "contentProtected": false,
+        "decorations": true,
+        "disableInputAccessoryView": false,
+        "dragDropEnabled": true,
+        "focus": true,
+        "fullscreen": false,
+        "height": 800,
+        "hiddenTitle": false,
+        "incognito": false,
+        "javascriptDisabled": false,
+        "label": "main",
+        "maximizable": true,
+        "minHeight": 600,
+        "minimizable": true,
+        "minWidth": 1024,
+        "proxyUrl": null,
+        "resizable": true,
+        "shadow": true,
+        "skipTaskbar": false,
+        "tabbingIdentifier": null,
+        "theme": "Light",
+        "title": "Smart Clinic Desktop",
+        "transparent": false,
+        "userAgent": null,
+        "visible": true,
+        "visibleOnAllWorkspaces": false,
+        "width": 1280,
+        "zoomHotkeysEnabled": true
+      }
+    ],
+    "withGlobalTauri": true
+  },
+  "build": {
+    "beforeBuildCommand": "bun build",
+    "beforeDevCommand": "bun dev",
+    "devUrl": "http://localhost:3000",
+    "features": [
+      "devtools"
+    ],
+    "frontendDist": "../dist",
+    "removeUnusedCommands": true
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true,
+        "files": {}
+      },
+      "deb": {
+        "changelog": null,
+        "depends": [
+          "libwebkit2gtk-4.0-37",
+          "libgtk-3-0",
+          "libjavascriptcoregtk-4.0-18"
+        ],
+        "desktopTemplate": null,
+        "files": {},
+        "postInstallScript": null,
+        "postRemoveScript": null,
+        "preInstallScript": null,
+        "preRemoveScript": null,
+        "priority": "optional",
+        "section": "utils"
+      },
+      "rpm": {
+        "compression": {
+          "level": 6,
+          "type": "gzip"
+        },
+        "depends": [
+          "webkit2gtk3",
+          "gtk3"
+        ],
+        "desktopTemplate": null,
+        "epoch": 0,
+        "files": {},
+        "release": "1"
+      }
+    },
+    "targets": "all"
+  },
+  "identifier": "com.tauri.dev",
+  "plugins": {
+    "fs": {
+      "scope": {
+        "allow": [
+          "$APPDATA/**",
+          "$HOME/**",
+          "$RESOURCE/**"
+        ],
+        "requireLiteralLeadingDot": false
+      }
+    },
+    "shell": {
+      "open": "^(https?://|mailto:|tel:).+",
+      "scope": [
+        {
+          "args": true,
+          "cmd": "node",
+          "cwd": true,
+          "name": "sidecar",
+          "sidecar": true
+        }
+      ]
+    },
+    "updater": {
+      "active": true,
+      "dialog": true,
+      "endpoints": [
+        "https://releases.smart-clinic.example.com/{{target}}/{{current_version}}"
+      ],
+      "pubkey": "YOUR-UPDATER-PUBLIC-KEY"
+    }
+  },
+  "productName": "smart-app",
+  "version": "0.1.0"
+}

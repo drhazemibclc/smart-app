@@ -1,12 +1,16 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  output: 'standalone',
+const isProd = process.env.NODE_ENV === 'production';
+const isTauri = process.env.TAURI_ENV === 'true' || isProd; // Assuming prod build is for Tauri
 
+const nextConfig: NextConfig = {
   // Cache Components mode - enables use cache directive
   cacheComponents: true,
-
+  output: 'export',
+  distDir: 'dist',
+  skipTrailingSlashRedirect: true,
+  trailingSlash: true,
   // Image optimization settings
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -20,7 +24,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'coin-images.coingecko.com' },
       { protocol: 'https', hostname: 'placehold.co' }
     ],
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: true, // MUST be true for Tauri/SSG
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384]
   },
@@ -45,63 +49,56 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [];
   },
-
-  // Security Headers
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY'
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
-          }
-        ]
-      }
-    ];
-  },
-  cacheLife: {
-    default: {
-      stale: 3600, // 1 hour stale-while-revalidate
-      revalidate: 7200, // 2 hours background revalidation
-      expire: 86400 // 24 hours max age
-    },
-    hours: {
-      stale: 3600,
-      revalidate: 7200,
-      expire: 86400
-    },
-    days: {
-      stale: 86400,
-      revalidate: 172800,
-      expire: 604800 // 7 days
-    },
-    weeks: {
-      stale: 604800,
-      revalidate: 1209600,
-      expire: 2592000 // 30 days
-    },
-    max: {
-      stale: 2592000, // 30 days
-      revalidate: 5184000,
-      expire: 31536000 // 365 days
-    }
-  },
+  // Headers are handled by the web server; Tauri doesn't use these.
+  // We skip them in export mode to prevent build errors.
+  ...(isTauri
+    ? {}
+    : {
+        async headers() {
+          return [
+            {
+              source: '/(.*)',
+              headers: [
+                { key: 'X-Content-Type-Options', value: 'nosniff' },
+                { key: 'X-Frame-Options', value: 'DENY' },
+                { key: 'X-XSS-Protection', value: '1; mode=block' },
+                { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' }
+              ]
+            }
+          ];
+        }
+      }),
 
   // Experimental features
   experimental: {
+    // Cache life profiles for use cache directive
+    cacheLife: {
+      default: {
+        stale: 3600, // 1 hour stale-while-revalidate
+        revalidate: 7200, // 2 hours background revalidation
+        expire: 86400 // 24 hours max age
+      },
+      hours: {
+        stale: 3600,
+        revalidate: 7200,
+        expire: 86400
+      },
+      days: {
+        stale: 86400,
+        revalidate: 172800,
+        expire: 604800 // 7 days
+      },
+      weeks: {
+        stale: 604800,
+        revalidate: 1209600,
+        expire: 2592000 // 30 days
+      },
+      max: {
+        stale: 2592000, // 30 days
+        revalidate: 5184000,
+        expire: 31536000 // 365 days
+      }
+    },
     // View Transitions API
     viewTransition: true,
     optimizePackageImports: [
@@ -111,8 +108,17 @@ const nextConfig: NextConfig = {
       'date-fns' // Optimize date utilities
     ],
     serverComponentsHmrCache: true
-
-    // Cache life profiles for use cache directive
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false
+      };
+    }
+    return config;
   }
 };
 
@@ -122,5 +128,5 @@ export default withSentryConfig(nextConfig, {
 
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  tunnelRoute: '/monitoring'
+  tunnelRoute: isTauri ? undefined : '/monitoring'
 });

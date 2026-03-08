@@ -3,6 +3,7 @@ import type { Context } from '@/server/api/context';
 import { appRouter } from '@/server/api/routers';
 import type { Session, User } from '@/server/auth';
 
+import { Logger } from '../logger';
 import type { db } from '../server/db';
 
 /**
@@ -12,6 +13,7 @@ export function createMockContext(overrides?: Partial<Context>): Context {
   return {
     session: null,
     user: null,
+    logger: typeof overrides?.logger === 'object' ? overrides.logger : (new Logger() ?? undefined),
     clinicId: undefined,
     db: {} as typeof db,
     headers: new Headers(),

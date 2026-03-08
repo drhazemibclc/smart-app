@@ -1,8 +1,23 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 
+import { sanitizeObject, trpcLogger } from '@/logger';
+
+import type { LogType } from '../../logger/types';
 import { enhancedErrorFormatter } from '../utils/validation';
 import type { Context } from './context';
+
+interface LoggingMiddlewareOptions {
+  logParams?: boolean;
+  logResult?: boolean;
+  logError?: boolean;
+}
+
+const defaultOptions: LoggingMiddlewareOptions = {
+  logParams: true,
+  logResult: process.env.NODE_ENV === 'development',
+  logError: true
+};
 
 // Initialize tRPC with proper typing
 const t = initTRPC.context<Context>().create({
@@ -143,6 +158,105 @@ export const clinicProcedure = publicProcedure.use(authMiddleware).use(clinicAcc
 // Role-specific procedures
 export const doctorProcedure = clinicProcedure.use(createRoleMiddleware(['DOCTOR', 'ADMIN']));
 export const staffProcedure = clinicProcedure.use(createRoleMiddleware(['STAFF', 'DOCTOR', 'ADMIN']));
+export function loggingMiddleware(opts: LoggingMiddlewareOptions = {}) {
+  const options = { ...defaultOptions, ...opts };
+
+  return t.middleware(async ({ path, type, next, input, ctx }) => {
+    const start = Date.now();
+    const requestId = crypto.randomUUID();
+
+    const logger = trpcLogger.child({
+      requestId,
+      path
+    });
+
+    // Log incoming request
+    if (options.logParams) {
+      logger.debug('tRPC request started', {
+        input: sanitizeObject(input),
+        type: type as LogType,
+        ...(ctx?.user && { userId: ctx.user.id })
+      });
+    } else {
+      logger.debug('tRPC request started');
+    }
+
+    try {
+      const result = await next();
+
+      const duration = Date.now() - start;
+
+      // Log successful request
+      if (result.ok) {
+        logger.info('tRPC request completed', {
+          duration,
+          ...(options.logResult && { result: sanitizeObject(result.data) })
+        });
+      }
+
+      return result;
+    } catch (error) {
+      const duration = Date.now() - start;
+
+      // Log error
+      if (options.logError) {
+        const trpcError = error as TRPCError;
+        logger.error(
+          'tRPC request failed',
+          {
+            duration,
+            code: trpcError.code,
+            cause: trpcError.cause,
+            ...(options.logParams && { input: sanitizeObject(input) })
+          },
+          error instanceof Error ? error : undefined
+        );
+      }
+
+      throw error;
+    }
+  });
+}
+
+// Performance monitoring middleware
+export const performanceMiddleware = t.middleware(async ({ path, next }) => {
+  const start = Date.now();
+  const memoryBefore = process.memoryUsage?.();
+  const result = await next();
+
+  const duration = Date.now() - start;
+  const memoryAfter = process.memoryUsage?.();
+
+  if (duration > 1000) {
+    // Log slow queries
+    trpcLogger.warn('Slow tRPC request detected', {
+      path,
+      duration,
+      memoryDelta:
+        memoryAfter && memoryBefore
+          ? {
+              heapUsed: memoryAfter.heapUsed - memoryBefore.heapUsed,
+              heapTotal: memoryAfter.heapTotal - memoryBefore.heapTotal
+            }
+          : undefined
+    });
+  }
+
+  return result;
+});
+
+// Request ID middleware
+export const requestIdMiddleware = t.middleware(({ ctx, next }) => {
+  const requestId = ctx.headers?.get('x-request-id') || crypto.randomUUID();
+
+  return next({
+    ctx: {
+      ...ctx,
+      requestId,
+      logger: trpcLogger.child({ requestId })
+    }
+  });
+});
 
 // Export t instance and router for convenience
 export const { middleware } = t;

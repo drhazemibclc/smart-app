@@ -167,7 +167,7 @@ async function seedAdmin() {
   }
 }
 
-seedAdmin().catch((e) => {
+seedAdmin().catch(e => {
   console.error('Unhandled error:', e);
   process.exit(1);
 });

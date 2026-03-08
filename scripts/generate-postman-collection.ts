@@ -112,7 +112,7 @@ function generatePostmanCollection() {
             'if (authToken) {',
             '    pm.request.headers.add({',
             '        key: "Cookie",',
-            '        value: `better-auth.session_token=${authToken}`',
+            '        value: "better-auth.session_token=" + authToken',
             '    });',
             '}'
           ]

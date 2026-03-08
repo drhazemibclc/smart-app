@@ -97,10 +97,14 @@ function generateInsomniaCollection() {
         url: '{{ _.baseUrl }}/api/auth/sign-in/email',
         body: {
           mimeType: 'application/json',
-          text: JSON.stringify({
-            email: 'admin@example.com',
-            password: 'password123'
-          }, null, 2)
+          text: JSON.stringify(
+            {
+              email: 'admin@example.com',
+              password: 'password123'
+            },
+            null,
+            2
+          )
         },
         headers: [
           {
@@ -147,15 +151,19 @@ function generateInsomniaCollection() {
         url: '{{ _.apiUrl }}/patient.create',
         body: {
           mimeType: 'application/json',
-          text: JSON.stringify({
-            firstName: 'John',
-            lastName: 'Doe',
-            dateOfBirth: '2020-01-15',
-            gender: 'MALE',
-            parentName: 'Jane Doe',
-            parentPhone: '+1234567890',
-            parentEmail: 'jane.doe@example.com'
-          }, null, 2)
+          text: JSON.stringify(
+            {
+              firstName: 'John',
+              lastName: 'Doe',
+              dateOfBirth: '2020-01-15',
+              gender: 'MALE',
+              parentName: 'Jane Doe',
+              parentPhone: '+1234567890',
+              parentEmail: 'jane.doe@example.com'
+            },
+            null,
+            2
+          )
         },
         headers: [
           {
@@ -171,7 +179,7 @@ function generateInsomniaCollection() {
         parentId: 'fld_patients',
         name: 'List Patients',
         method: 'GET',
-        url: '{{ _.apiUrl }}/patient.list',
+        url: '{{ _.apiUrl }}/patient.list'
       },
       {
         _id: 'fld_medical',
@@ -205,12 +213,16 @@ function generateInsomniaCollection() {
         url: '{{ _.apiUrl }}/medical.createMedicalRecord',
         body: {
           mimeType: 'application/json',
-          text: JSON.stringify({
-            patientId: '{{ _.patientId }}',
-            chiefComplaint: 'Persistent cough and fever',
-            presentIllness: 'Patient presented with cough and fever for 3 days',
-            notes: 'Patient showing signs of bronchitis'
-          }, null, 2)
+          text: JSON.stringify(
+            {
+              patientId: '{{ _.patientId }}',
+              chiefComplaint: 'Persistent cough and fever',
+              presentIllness: 'Patient presented with cough and fever for 3 days',
+              notes: 'Patient showing signs of bronchitis'
+            },
+            null,
+            2
+          )
         },
         headers: [
           {
@@ -244,17 +256,21 @@ function generateInsomniaCollection() {
         url: '{{ _.apiUrl }}/medical.createVitalSigns',
         body: {
           mimeType: 'application/json',
-          text: JSON.stringify({
-            patientId: '{{ _.patientId }}',
-            medicalId: '{{ _.medicalRecordId }}',
-            temperature: 37.2,
-            heartRate: 95,
-            bloodPressureSystolic: 115,
-            bloodPressureDiastolic: 75,
-            oxygenSaturation: 99,
-            weight: 18.5,
-            height: 110
-          }, null, 2)
+          text: JSON.stringify(
+            {
+              patientId: '{{ _.patientId }}',
+              medicalId: '{{ _.medicalRecordId }}',
+              temperature: 37.2,
+              heartRate: 95,
+              bloodPressureSystolic: 115,
+              bloodPressureDiastolic: 75,
+              oxygenSaturation: 99,
+              weight: 18.5,
+              height: 110
+            },
+            null,
+            2
+          )
         },
         headers: [
           {

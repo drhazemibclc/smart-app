@@ -26,7 +26,7 @@ import {
   UpsertPatientSchema
 } from '../../../zodSchemas';
 import { patientService } from '../../db/services';
-import { createTRPCRouter, protectedProcedure } from '..';
+import { createTRPCRouter, loggingMiddleware, protectedProcedure } from '..';
 
 export const patientRouter = createTRPCRouter({
   // ==================== QUERIES ====================
@@ -35,25 +35,28 @@ export const patientRouter = createTRPCRouter({
    * Get patient by ID
    * Service handles caching internally
    */
-  getById: protectedProcedure.input(GetPatientByIdSchema.shape.id).query(async ({ ctx, input }) => {
-    try {
-      const clinicId = ctx.session?.user?.clinic?.id;
-      if (!clinicId) {
+  getById: protectedProcedure
+    .use(loggingMiddleware())
+    .input(GetPatientByIdSchema.shape.id)
+    .query(async ({ ctx, input }) => {
+      try {
+        const clinicId = ctx.session?.user?.clinic?.id;
+        if (!clinicId) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Clinic ID not found'
+          });
+        }
+
+        return await patientService.getPatientById(input, clinicId);
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Clinic ID not found'
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to fetch patient'
         });
       }
-
-      return await patientService.getPatientById(input, clinicId);
-    } catch (error) {
-      if (error instanceof TRPCError) throw error;
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to fetch patient'
-      });
-    }
-  }),
+    }),
 
   /**
    * Get patient full data by ID (with appointments, medical records, etc.)

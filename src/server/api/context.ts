@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { cache } from 'react';
 
+import logger from '@/logger';
 import { auth, type Session, type User } from '@/server/auth';
 
 import { prisma } from '../db';
@@ -11,6 +12,7 @@ export type Context = {
   clinicId?: string | undefined;
   db: typeof prisma;
   headers: Headers;
+  logger: typeof logger;
 };
 
 export const createTRPCContext = cache(async () => {
@@ -22,6 +24,10 @@ export const createTRPCContext = cache(async () => {
     session,
     user,
     clinicId,
+    logger: logger.child({
+      requestId: crypto.randomUUID(),
+      userId: session?.user?.id
+    }),
     db: prisma,
     headers: (await headers()) as Headers
   };

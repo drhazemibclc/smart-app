@@ -1,8 +1,9 @@
 import 'dotenv/config';
 
-import bcrypt from 'bcryptjs';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+
+import bcrypt from 'bcryptjs';
 
 const execAsync = promisify(exec);
 
@@ -73,7 +74,7 @@ COMMIT;
 `;
 
     console.log('📝 Executing SQL...');
-    const { stdout, stderr } = await execAsync(`psql "${dbUrl}" -c "${sql.replace(/"/g, '\\"')}"`);
+    const { stderr } = await execAsync(`psql "${dbUrl}" -c "${sql.replace(/"/g, '\\"')}"`);
 
     if (stderr && !stderr.includes('NOTICE')) {
       console.error('⚠️  Warnings:', stderr);

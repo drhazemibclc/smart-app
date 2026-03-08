@@ -1,0 +1,215 @@
+{
+  "__export_date": "2026-03-07T21:36:41.005Z",
+  "__export_format": 4,
+  "__export_source": "pediatric-clinic-api",
+  "_type": "export",
+  "resources": [
+    {
+      "_id": "wrk_pediatric_clinic",
+      "_type": "workspace",
+      "description": "Complete API collection for Pediatric Clinic Medical Records Management",
+      "name": "Pediatric Clinic API"
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "data": {
+        "apiUrl": "http://localhost:3000/api/trpc",
+        "appointmentId": "",
+        "authToken": "",
+        "baseUrl": "http://localhost:3000",
+        "doctorId": "",
+        "medicalRecordId": "",
+        "patientId": "",
+        "prescriptionId": "",
+        "visitId": ""
+      },
+      "name": "Local Development",
+      "parentId": "wrk_pediatric_clinic"
+    },
+    {
+      "_id": "jar_cookies",
+      "_type": "cookie_jar",
+      "cookies": [],
+      "name": "Default Jar",
+      "parentId": "wrk_pediatric_clinic"
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "description": "Authentication endpoints",
+      "name": "Authentication",
+      "parentId": "wrk_pediatric_clinic"
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@clinic.local\",\n  \"password\": \"HealthF26\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "Login",
+      "parentId": "fld_auth",
+      "url": "{{ _.baseUrl }}/api/auth/sign-in/email"
+    },
+    {
+      "_id": "req_session",
+      "_type": "request",
+      "headers": [],
+      "method": "GET",
+      "name": "Get Session",
+      "parentId": "fld_auth",
+      "url": "{{ _.baseUrl }}/api/auth/get-session"
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "headers": [],
+      "method": "POST",
+      "name": "Logout",
+      "parentId": "fld_auth",
+      "url": "{{ _.baseUrl }}/api/auth/sign-out"
+    },
+    {
+      "_id": "fld_patients",
+      "_type": "request_group",
+      "description": "Patient management endpoints",
+      "name": "Patients",
+      "parentId": "wrk_pediatric_clinic"
+    },
+    {
+      "_id": "req_patient_create",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"dateOfBirth\": \"2020-01-15\",\n  \"gender\": \"MALE\",\n  \"parentName\": \"Jane Doe\",\n  \"parentPhone\": \"+1234567890\",\n  \"parentEmail\": \"jane.doe@example.com\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "Create Patient",
+      "parentId": "fld_patients",
+      "url": "{{ _.apiUrl }}/patient.create"
+    },
+    {
+      "_id": "req_patient_list",
+      "_type": "request",
+      "method": "GET",
+      "name": "List Patients",
+      "parentId": "fld_patients",
+      "url": "{{ _.apiUrl }}/patient.list"
+    },
+    {
+      "_id": "fld_medical",
+      "_type": "request_group",
+      "description": "Medical records management",
+      "name": "Medical Records",
+      "parentId": "wrk_pediatric_clinic"
+    },
+    {
+      "_id": "req_medical_list",
+      "_type": "request",
+      "method": "GET",
+      "name": "List Medical Records",
+      "parameters": [
+        {
+          "name": "input",
+          "value": "{\"limit\":10,\"page\":1}"
+        }
+      ],
+      "parentId": "fld_medical",
+      "url": "{{ _.apiUrl }}/medical.listRecords"
+    },
+    {
+      "_id": "req_medical_create",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"patientId\": \"{{ _.patientId }}\",\n  \"chiefComplaint\": \"Persistent cough and fever\",\n  \"presentIllness\": \"Patient presented with cough and fever for 3 days\",\n  \"notes\": \"Patient showing signs of bronchitis\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "Create Medical Record",
+      "parentId": "fld_medical",
+      "url": "{{ _.apiUrl }}/medical.createMedicalRecord"
+    },
+    {
+      "_id": "req_medical_get",
+      "_type": "request",
+      "method": "GET",
+      "name": "Get Medical Record by ID",
+      "parameters": [
+        {
+          "name": "input",
+          "value": "{\"id\":\"{{ _.medicalRecordId }}\"}"
+        }
+      ],
+      "parentId": "fld_medical",
+      "url": "{{ _.apiUrl }}/medical.getMedicalRecordById"
+    },
+    {
+      "_id": "req_vitals_create",
+      "_type": "request",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"patientId\": \"{{ _.patientId }}\",\n  \"medicalId\": \"{{ _.medicalRecordId }}\",\n  \"temperature\": 37.2,\n  \"heartRate\": 95,\n  \"bloodPressureSystolic\": 115,\n  \"bloodPressureDiastolic\": 75,\n  \"oxygenSaturation\": 99,\n  \"weight\": 18.5,\n  \"height\": 110\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "method": "POST",
+      "name": "Create Vital Signs",
+      "parentId": "fld_medical",
+      "url": "{{ _.apiUrl }}/medical.createVitalSigns"
+    },
+    {
+      "_id": "fld_appointments",
+      "_type": "request_group",
+      "description": "Appointment management",
+      "name": "Appointments",
+      "parentId": "wrk_pediatric_clinic"
+    },
+    {
+      "_id": "req_appointment_list",
+      "_type": "request",
+      "method": "GET",
+      "name": "List Appointments",
+      "parameters": [
+        {
+          "name": "input",
+          "value": "{\"limit\":10}"
+        }
+      ],
+      "parentId": "fld_appointments",
+      "url": "{{ _.apiUrl }}/appointment.list"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "headers": [],
+      "method": "GET",
+      "name": "Health Check",
+      "parentId": "wrk_pediatric_clinic",
+      "url": "{{ _.baseUrl }}/api/health"
+    }
+  ]
+}

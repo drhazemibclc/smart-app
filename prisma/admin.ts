@@ -1,69 +1,63 @@
+// prisma/admin.ts
 import 'dotenv/config';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
-import { Pool } from 'pg';
 
 import { PrismaClient } from '../src/generated/prisma/client';
 import { generateId } from '../src/lib/id';
-import { logger } from '../src/lib/logger';
-import { auth } from '../src/server/auth';
+import { logger } from '../src/logger';
 
-// Initialize Prisma with proper adapter for this script
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-});
-
-const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({
-  adapter
-});
+const connectionString = process.env.DATABASE_URL ?? '';
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function seedAdmin() {
   const log = logger.child({ module: 'seed', action: 'create-admin' });
 
   log.info('🌱 Starting admin user, clinic, and doctor profile seed...');
 
-  const adminEmail = "hazem032012@gmail.com";
+  const adminEmail = 'hazem032012@gmail.com';
   const adminPassword = 'HealthF26';
   const adminName = 'Dr. Hazem Ali';
   const adminPhone = '01003497579';
   const clinicName = 'Smart Clinic';
 
   try {
-    // 0️⃣ PRE-SEED CLEANUP
+    // Skip the queryRaw test - just try a simple findFirst to test connection
+    log.info('Testing database connection...');
+    try {
+      const testUser = await prisma.user.findFirst();
+      log.info('✅ Database connection successful', { hasUsers: !!testUser });
+    } catch (connError) {
+      log.error('Database connection failed', connError as Error);
+      throw connError;
+    }
+
+    // 0️⃣ PRE-SEED CLEANUP - Use a transaction
     log.info('🧹 Cleaning up existing admin data...');
 
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email: "hazem032012@gmail.com",
-      },
-      include: {
-        doctor: true,
-        accounts: true,
-        sessions: true,
-        clinicMembers: true
+    await prisma.$transaction(async tx => {
+      // Find existing user
+      const existingUser = await tx.user.findUnique({
+        where: { email: adminEmail }
+      });
+
+      if (existingUser) {
+        log.debug('Found existing user, cleaning up...', { userId: existingUser.id });
+
+        // Delete in correct order to avoid foreign key constraints
+        await tx.clinicMember.deleteMany({ where: { userId: existingUser.id } });
+        await tx.doctor.deleteMany({ where: { userId: existingUser.id } });
+        await tx.session.deleteMany({ where: { userId: existingUser.id } });
+        await tx.account.deleteMany({ where: { userId: existingUser.id } });
+        await tx.user.delete({ where: { id: existingUser.id } });
+
+        log.info(`🗑️ Removed existing user: ${adminEmail}`);
       }
     });
 
-    if (existingUser) {
-      log.debug('Found existing user, cleaning up...', { userId: existingUser.id });
-
-      // Delete in correct order to avoid foreign key constraints
-      await prisma.clinicMember.deleteMany({ where: { userId: existingUser.id } });
-
-      if (existingUser.doctor) {
-        await prisma.doctor.delete({ where: { id: existingUser.doctor.id } });
-      }
-
-      await prisma.session.deleteMany({ where: { userId: existingUser.id } });
-      await prisma.account.deleteMany({ where: { userId: existingUser.id } });
-      await prisma.user.delete({ where: { id: existingUser.id } });
-
-      log.info(`🗑️ Removed existing user: ${adminEmail}`);
-    }
-
+    // Find and delete existing clinic separately (simpler)
     const existingClinic = await prisma.clinic.findUnique({
       where: { name: clinicName }
     });
@@ -82,79 +76,40 @@ async function seedAdmin() {
         address: 'Hurghada, Egypt',
         phone: adminPhone,
         email: adminEmail,
-        isDeleted: false
+        isDeleted: false,
+        // Generate a unique code
+        timezone: 'Africa/Cairo'
       }
     });
     log.info(`🏥 Clinic created: ${clinic.name}`, { clinicId: clinic.id });
 
-    // 2️⃣ CREATE USER WITH BETTER AUTH
-    log.info('Creating admin user with Better Auth...');
+    // 2️⃣ CREATE USER DIRECTLY
+    log.info('Creating admin user directly with Prisma...');
 
-    let userId: string;
+    // Hash password manually
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    const userId = generateId('user'); // Make sure generateId works with a prefix
 
-    try {
-      // Try Better Auth first
-      const signUpResult = await auth.api.createUser({
-        body: {
-          email: "hazem032012@gmail.com",
-          password: adminPassword,
-          name: adminName,
-          role: 'admin',
-          data: {
-            role: 'ADMIN',
-            clinicId: clinic.id
-          }
-        }
-      });
-
-      if (!signUpResult?.user) {
-        throw new Error('Better Auth signup failed');
-      }
-
-      userId = signUpResult.user.id;
-      log.info(`✅ User created via Better Auth: ${adminEmail}`, { userId });
-    } catch (authError) {
-      // Fallback to direct Prisma creation if Better Auth fails
-      log.warn('Better Auth signup failed, falling back to direct Prisma creation', { error: authError });
-
-      // Hash password manually
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-      const user = await prisma.user.create({
-        data: {
-          id: generateId(),
-          email: adminEmail,
-          password: hashedPassword,
-          name: adminName,
-          phone: adminPhone,
-          emailVerified: true,
-          role: 'ADMIN',
-          isAdmin: true,
-          clinicId: clinic.id
-        }
-      });
-
-      userId = user.id;
-      log.info(`✅ User created via Prisma: ${adminEmail}`, { userId });
-    }
-
-    // 3️⃣ UPDATE USER TO ADMIN ROLE (if not already set)
-    await prisma.user.update({
-      where: { id: userId },
+    const user = await prisma.user.create({
       data: {
-        isAdmin: true,
-        role: 'ADMIN',
+        id: userId,
+        email: adminEmail,
+        password: hashedPassword,
+        name: adminName,
         phone: adminPhone,
         emailVerified: true,
-        clinicId: clinic.id
+        role: 'ADMIN',
+        isAdmin: true
       }
     });
-    log.info('👑 User upgraded to admin');
 
-    // 4️⃣ CREATE DOCTOR PROFILE
+    log.info(`✅ User created via Prisma: ${adminEmail}`, { userId: user.id });
+
+    // 3️⃣ CREATE DOCTOR PROFILE
     log.debug('Creating doctor profile...');
     const adminDoctor = await prisma.doctor.create({
       data: {
+        id: generateId('doctor'),
         email: adminEmail,
         name: adminName,
         appointmentPrice: 300,
@@ -162,17 +117,21 @@ async function seedAdmin() {
         licenseNumber: 'SMART-ADM-001',
         phone: adminPhone,
         clinicId: clinic.id,
-        userId: userId,
+        userId: user.id,
         isActive: true,
-        role: 'ADMIN'
+        role: 'ADMIN',
+        type: 'FULL',
+        availabilityStatus: 'AVAILABLE'
       }
     });
     log.info(`👨‍⚕️ Doctor Profile created: ${adminDoctor.name}`, { doctorId: adminDoctor.id });
 
+    // 4️⃣ CREATE A BASIC ROLE
+
     // 5️⃣ LINK VIA CLINIC MEMBER
     await prisma.clinicMember.create({
       data: {
-        userId: userId,
+        userId: user.id,
         clinicId: clinic.id,
         role: 'ADMIN'
       }
@@ -181,12 +140,13 @@ async function seedAdmin() {
 
     // 6️⃣ VERIFY EVERYTHING WAS CREATED
     const verification = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: user.id },
       include: {
         doctor: true,
         clinicMembers: {
           include: {
-            clinic: true
+            clinic: true,
+            user: true
           }
         }
       }
@@ -201,28 +161,30 @@ async function seedAdmin() {
       },
       doctor: verification?.doctor
         ? {
-          id: verification.doctor.id,
-          specialty: verification.doctor.specialty
-        }
+            id: verification.doctor.id,
+            specialty: verification.doctor.specialty
+          }
         : null,
       clinics: verification?.clinicMembers.map(cm => ({
         id: cm.clinic.id,
-        name: cm.clinic.name,
-        role: cm.role
+        name: cm.clinic.name
       }))
     });
 
-    console.log('\n📧 Email:', adminEmail);
+    console.log(`\n${'='.repeat(50)}`);
+    console.log('📧 Email:', adminEmail);
     console.log('🔑 Password:', adminPassword);
     console.log('🏥 Clinic:', clinicName);
+    console.log('👨‍⚕️ Doctor ID:', adminDoctor.id);
+    console.log('🆔 User ID:', user.id);
+    console.log('='.repeat(50));
   } catch (err) {
     log.error('❌ Error during seeding', err as Error);
+    console.error('\n❌ Detailed error:', err);
     await prisma.$disconnect();
-    await pool.end();
     process.exit(1);
   } finally {
     await prisma.$disconnect();
-    await pool.end();
     process.exit(0);
   }
 }

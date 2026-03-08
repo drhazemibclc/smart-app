@@ -17,7 +17,7 @@ import { EventEmitter } from 'node:events';
 import type Redis from 'ioredis';
 import superjson from 'superjson';
 
-import { redisLogger as log } from '@/server/logger';
+import redisLogger from '@/logger';
 
 import { redisManager } from './client';
 
@@ -89,7 +89,7 @@ export class SubscriptionMultiplexer {
       patterns.map(async pattern => {
         await this.subscriber?.psubscribe(pattern);
         this.subscribedPatterns.add(pattern);
-        log.trace({ pattern }, 'Multiplexer subscribed to pattern');
+        redisLogger.trace('Multiplexer subscribed to pattern', { pattern });
       })
     );
 
@@ -101,19 +101,20 @@ export class SubscriptionMultiplexer {
         try {
           this.emitter.emit(channel, superjson.parse(message));
         } catch (err) {
-          log.error({ err, channel }, 'Failed to parse multiplexed message');
+          redisLogger.error('Failed to parse multiplexed message', { err, channel });
         }
       });
     });
 
     this.subscriber.on('error', err => {
-      log.error({ err }, 'Multiplexer subscriber error');
+      redisLogger.error('Multiplexer subscriber error', { err });
     });
 
-    log.debug(
-      { userId: this.userId, householdKey: this.householdKey, patternCount: patterns.length },
-      'Subscription multiplexer initialized'
-    );
+    redisLogger.debug('Subscription multiplexer initialized', {
+      userId: this.userId,
+      householdKey: this.householdKey,
+      patternCount: patterns.length
+    });
   }
 
   /**
@@ -131,7 +132,7 @@ export class SubscriptionMultiplexer {
 
     this.channelListenerCounts.set(channel, currentCount + 1);
 
-    log.trace({ channel, listenerCount: currentCount + 1 }, 'Added multiplexed listener');
+    redisLogger.trace('Added multiplexed listener', { channel, listenerCount: currentCount + 1 });
 
     // Create a queue for incoming messages
     const queue: T[] = [];
@@ -162,7 +163,7 @@ export class SubscriptionMultiplexer {
       } else {
         this.channelListenerCounts.set(channel, count - 1);
       }
-      log.trace({ channel, listenerCount: count - 1 }, 'Removed multiplexed listener');
+      redisLogger.trace('Removed multiplexed listener', { channel, listenerCount: count - 1 });
       rejected = true;
       resolve?.();
     };
@@ -201,7 +202,7 @@ export class SubscriptionMultiplexer {
     if (this.closed) return;
     this.closed = true;
 
-    log.debug({ userId: this.userId, householdKey: this.householdKey }, 'Closing subscription multiplexer');
+    redisLogger.debug('Closing subscription multiplexer', { userId: this.userId, householdKey: this.householdKey });
 
     // Remove all listeners
     this.emitter.removeAllListeners();
@@ -215,7 +216,7 @@ export class SubscriptionMultiplexer {
         }
         await this.subscriber.quit();
       } catch (err) {
-        log.debug({ err }, 'Error during multiplexer cleanup');
+        redisLogger.debug('Error during multiplexer cleanup', { err });
       }
       this.subscriber = null;
     }
@@ -284,7 +285,7 @@ export function getOrCreateMultiplexer(
   if (!multiplexer || multiplexer.isClosed) {
     multiplexer = new SubscriptionMultiplexer(userId, householdKey);
     multiplexerRegistry.set(connectionId, multiplexer);
-    log.debug({ connectionId, userId, householdKey }, 'Created new multiplexer');
+    redisLogger.debug('Created new multiplexer', { connectionId, userId, householdKey });
   }
 
   return multiplexer;
@@ -299,7 +300,7 @@ export async function closeMultiplexer(connectionId: string): Promise<void> {
   if (multiplexer) {
     await multiplexer.close();
     multiplexerRegistry.delete(connectionId);
-    log.debug({ connectionId }, 'Closed and removed multiplexer');
+    redisLogger.debug('Closed and removed multiplexer', { connectionId });
   }
 }
 

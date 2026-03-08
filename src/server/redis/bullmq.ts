@@ -12,7 +12,7 @@
 import type { RedisOptions } from 'ioredis';
 import Redis from 'ioredis';
 
-import { createLogger } from '@/server/logger';
+import { createLogger } from '@/logger';
 
 const log = createLogger('redis:bullmq');
 
@@ -57,14 +57,14 @@ function getBaseOptions(): RedisOptions {
     // Retry strategy with exponential backoff
     retryStrategy: (times: number) => {
       if (times > 20) {
-        log.error({ times }, 'Redis connection failed after max retries');
+        log.error('Redis connection failed after max retries', { times, max: 20 });
 
         return null; // Stop retrying
       }
 
       const delay = Math.min(Math.exp(times), 20_000);
 
-      log.warn({ times, delay }, 'Redis connection retry');
+      log.warn('Redis connection retry', { times, delay });
 
       return delay;
     }
@@ -100,7 +100,7 @@ export function getBullClient(): Redis {
   });
 
   bullClient.on('error', err => {
-    log.error({ err }, 'BullMQ Redis error');
+    log.error('BullMQ Redis error', { err });
   });
 
   bullClient.on('connect', () => {

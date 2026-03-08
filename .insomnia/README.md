@@ -31,15 +31,22 @@ npm run generate:insomnia
 
 ### 4. Setup Authentication
 
-```bash
-# Create test user
-npm run db:admin
+The admin user is already created with these credentials:
 
-# Then in Insomnia:
-# 1. Open "Authentication" → "Login"
-# 2. Update email/password
-# 3. Click "Send"
-# 4. Cookies are automatically saved!
+```
+Email:    admin@clinic.local
+Password: HealthF26
+Role:     ADMIN
+```
+
+In Insomnia:
+1. Open "Authentication" → "Login"
+2. Credentials are pre-filled - just click "Send"
+3. Cookies are automatically saved!
+
+**Need to recreate admin user?**
+```bash
+npm run db:admin
 ```
 
 ### 5. Start Testing
@@ -67,7 +74,9 @@ npm run test:insomnia
 
 ## Documentation
 
-- **Full Guide**: `docs/INSOMNIA_GUIDE.md`
+- **Quick Start**: `.insomnia/QUICK_START.md` - 5-minute setup guide
+- **Testing Guide**: `.insomnia/TESTING_GUIDE.md` - Complete testing workflow
+- **Full Guide**: `docs/INSOMNIA_GUIDE.md` - Comprehensive documentation
 - **Insomnia Docs**: https://docs.insomnia.rest/
 
 ## Collection Structure
